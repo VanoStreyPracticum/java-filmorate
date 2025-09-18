@@ -34,6 +34,9 @@ public class InMemoryStorage {
     }
 
     public User updateUser(User user) {
+        if (!users.containsKey(user.getId())) {
+            throw new NoSuchElementException("Пользователь с id=" + user.getId() + " не найден");
+        }
         users.put(user.getId(), user);
         return user;
     }
@@ -62,6 +65,9 @@ public class InMemoryStorage {
     }
 
     public Film updateFilm(Film film) {
+        if (!films.containsKey(film.getId())) {
+            throw new NoSuchElementException("Фильм с id=" + film.getId() + " не найден");
+        }
         films.put(film.getId(), film);
         return film;
     }
