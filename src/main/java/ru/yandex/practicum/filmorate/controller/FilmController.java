@@ -17,13 +17,13 @@ public class FilmController {
     private final ValidationService validationService;
 
     @PostMapping
-    public Film create(@RequestBody Film film) {
+    public Film create(@Valid @RequestBody Film film) {
         validationService.validateNewFilm(film);
         return filmService.create(film);
     }
 
     @PutMapping
-    public Film update(@RequestBody Film film) {
+    public Film update(@Valid @RequestBody Film film) {
         validationService.validateNewFilm(film);
         return filmService.update(film);
     }
