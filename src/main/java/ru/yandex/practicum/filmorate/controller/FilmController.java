@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.ValidationService;
 import ru.yandex.practicum.filmorate.storage.InMemoryStorage;
@@ -26,18 +27,20 @@ public class FilmController {
         return ResponseEntity.ok(saved);
     }
 
+    // FilmController.java
     @PutMapping
     public ResponseEntity<Film> updateFilm(@Valid @RequestBody Film film) {
         if (film.getId() == null || !storage.existsFilm(film.getId())) {
-            String msg = "Фильм с указанным id не найден";
-            log.warn(msg + " id=" + film.getId());
-            return ResponseEntity.notFound().build();
+            String msg = "Фильм с указанным id не найден: " + film.getId();
+            log.warn(msg);
+            throw new ValidationException(msg);
         }
         validationService.validateNewFilm(film);
-        Film updated = storage.addFilm(film);
+        Film updated = storage.updateFilm(film); // используй updateFilm, а не addFilm
         log.info("Обновлён фильм: id={}, name='{}'", updated.getId(), updated.getName());
         return ResponseEntity.ok(updated);
     }
+
 
     @GetMapping
     public Collection<Film> getAll() {
