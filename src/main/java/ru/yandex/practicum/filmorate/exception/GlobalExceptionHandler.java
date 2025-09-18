@@ -13,13 +13,14 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-    private final String MESSAGE_HEAD = "error";
+    // Исправлено имя константы
+    private final String messageHead = "error";
 
     @ExceptionHandler(ValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidation(ValidationException ex) {
         log.warn("Validation failed: {}", ex.getMessage());
-        return Map.of(MESSAGE_HEAD, ex.getMessage());
+        return Map.of(messageHead, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -29,20 +30,20 @@ public class GlobalExceptionHandler {
                 .map(e -> e.getField() + ": " + e.getDefaultMessage())
                 .findFirst().orElse(ex.getMessage());
         log.warn("MethodArgumentNotValid: {}", message);
-        return Map.of(MESSAGE_HEAD, message);
+        return Map.of(messageHead, message);
     }
 
     @ExceptionHandler(NoSuchElementException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleNotFound(NoSuchElementException ex) {
         log.warn("Not found: {}", ex.getMessage());
-        return Map.of(MESSAGE_HEAD, ex.getMessage());
+        return Map.of(messageHead, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, String> fallback(Exception ex) {
         log.error("Unhandled error", ex);
-        return Map.of(MESSAGE_HEAD, "Внутренняя ошибка сервера");
+        return Map.of(messageHead, "Внутренняя ошибка сервера");
     }
 }
