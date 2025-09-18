@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.ValidationService;
 import ru.yandex.practicum.filmorate.storage.InMemoryStorage;
@@ -39,7 +39,7 @@ public class UserController {
         if (user.getId() == null || !storage.existsUser(user.getId())) {
             String msg = "Пользователь с указанным id не найден: " + user.getId();
             log.warn(msg);
-            throw new ValidationException(msg);
+            throw new NotFoundException(msg);
         }
         validationService.validateNewUser(user);
         if (user.getName() == null || user.getName().isBlank()) {
