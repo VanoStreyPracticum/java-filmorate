@@ -5,54 +5,60 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.ValidationService;
-import ru.yandex.practicum.filmorate.storage.InMemoryStorage;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
-    private final InMemoryStorage storage;
-    private final ValidationService validationService;
+    private final UserService userService;
 
     @PostMapping
     public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
-        validationService.validateNewUser(user);
-
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-
-        User saved = storage.addUser(user);
-        log.info("Создан пользователь: id={}, login='{}'", saved.getId(), saved.getLogin());
-        return ResponseEntity.ok(saved);
+        User created = userService.create(user);
+        log.info("Создан пользователь: id={}, login='{}'", created.getId(), created.getLogin());
+        return ResponseEntity.ok(created);
     }
 
-    // UserController.java
     @PutMapping
     public ResponseEntity<User> updateUser(@Valid @RequestBody User user) {
-        if (user.getId() == null || !storage.existsUser(user.getId())) {
-            String msg = "Пользователь с указанным id не найден: " + user.getId();
-            log.warn(msg);
-            throw new NotFoundException(msg);
-        }
-        validationService.validateNewUser(user);
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-        User updated = storage.updateUser(user);
+        User updated = userService.update(user);
         log.info("Обновлён пользователь: id={}, login='{}'", updated.getId(), updated.getLogin());
         return ResponseEntity.ok(updated);
     }
 
-
     @GetMapping
     public Collection<User> getAllUsers() {
-        return storage.getAllUsers();
+        return userService.getAll();
+    }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable long id) {
+        return userService.getById(id);
+    }
+
+    @PutMapping("/{id}/friends/{friendId}")
+    public void addFriend(@PathVariable long id, @PathVariable long friendId) {
+        userService.addFriend(id, friendId);
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public void removeFriend(@PathVariable long id, @PathVariable long friendId) {
+        userService.removeFriend(id, friendId);
+    }
+
+    @GetMapping("/{id}/friends")
+    public List<User> getFriends(@PathVariable long id) {
+        return userService.getFriends(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public List<User> getCommonFriends(@PathVariable long id, @PathVariable long otherId) {
+        return userService.getCommonFriends(id, otherId);
     }
 }
