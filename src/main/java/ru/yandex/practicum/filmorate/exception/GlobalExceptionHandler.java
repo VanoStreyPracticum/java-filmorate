@@ -13,7 +13,6 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-    // Исправлено имя константы
     private final String messageHead = "error";
 
     @ExceptionHandler(ValidationException.class)
@@ -33,7 +32,7 @@ public class GlobalExceptionHandler {
         return Map.of(messageHead, message);
     }
 
-    @ExceptionHandler(NoSuchElementException.class)
+    @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleNotFound(NoSuchElementException ex) {
         log.warn("Not found: {}", ex.getMessage());
