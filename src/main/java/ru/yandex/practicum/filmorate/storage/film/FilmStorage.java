@@ -15,4 +15,10 @@ public interface FilmStorage {
     boolean existsFilm(long id);
 
     Collection<Film> getAllFilms();
+
+    void addLike(Long filmId, Long userId);
+
+    void deleteLike(Long filmId, Long userId);
+
+    Collection<Film> getPopularFilms(int count);
 }

@@ -1,22 +1,27 @@
 package ru.yandex.practicum.filmorate.service;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.ValidationService;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class UserService {
+
+    @Qualifier("userDbStorage")
     private final UserStorage userStorage;
     private final ValidationService validationService;
+
+    public UserService(UserStorage userStorage, ValidationService validationService) {
+        this.userStorage = userStorage;
+        this.validationService = validationService;
+    }
 
     public User create(User user) {
         validationService.validateNewUser(user);
@@ -42,41 +47,52 @@ public class UserService {
     }
 
     public User getById(long id) {
-        return userStorage.getUser(id).orElseThrow(() -> new NotFoundException("Пользователь не найден: " + id));
+        return userStorage.getUser(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден: " + id));
     }
 
-    public void addFriend(long id, long friendId) {
-        User user = getById(id);
-        User friend = getById(friendId);
-        user.getFriends().add(friendId);
-        friend.getFriends().add(id);
+    public void addFriend(long userId, long friendId) {
+        // Проверяем существование обоих пользователей
+        if (!userStorage.existsUser(userId)) {
+            throw new NotFoundException("Пользователь не найден: " + userId);
+        }
+        if (!userStorage.existsUser(friendId)) {
+            throw new NotFoundException("Пользователь не найден: " + friendId);
+        }
+        userStorage.addFriend(userId, friendId);
     }
 
-    public void removeFriend(long id, long friendId) {
-        User user = getById(id);
-        User friend = getById(friendId);
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(id);
+    public void removeFriend(long userId, long friendId) {
+        // Проверяем существование обоих пользователей
+        if (!userStorage.existsUser(userId)) {
+            throw new NotFoundException("Пользователь не найден: " + userId);
+        }
+        if (!userStorage.existsUser(friendId)) {
+            throw new NotFoundException("Пользователь не найден: " + friendId);
+        }
+        userStorage.deleteFriend(userId, friendId);
     }
 
-    public List<User> getFriends(long id) {
-        User user = getById(id);
-        return user.getFriends().stream()
-                .map(userStorage::getUser)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+    public List<User> getFriends(long userId) {
+        // Проверяем существование пользователя
+        if (!userStorage.existsUser(userId)) {
+            throw new NotFoundException("Пользователь не найден: " + userId);
+        }
+        return userStorage.getFriendsList(userId)
+                .stream()
                 .collect(Collectors.toList());
     }
 
-    public List<User> getCommonFriends(long id, long otherId) {
-        User user = getById(id);
-        User other = getById(otherId);
-        Set<Long> common = new HashSet<>(user.getFriends());
-        common.retainAll(other.getFriends());
-        return common.stream()
-                .map(userStorage::getUser)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+    public List<User> getCommonFriends(long userId, long otherId) {
+        // Проверяем существование обоих пользователей
+        if (!userStorage.existsUser(userId)) {
+            throw new NotFoundException("Пользователь не найден: " + userId);
+        }
+        if (!userStorage.existsUser(otherId)) {
+            throw new NotFoundException("Пользователь не найден: " + otherId);
+        }
+        return userStorage.getCommonFriends(userId, otherId)
+                .stream()
                 .collect(Collectors.toList());
     }
 }
