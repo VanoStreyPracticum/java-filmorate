@@ -31,8 +31,7 @@ public class FilmService {
     }
 
     public Film update(Film film) {
-        if (film.getId() == null)
-        {
+        if (film.getId() == null) {
             throw new ValidationException("ID обязателен для обновления фильма");
         }
         validationService.validateNewFilm(film);
