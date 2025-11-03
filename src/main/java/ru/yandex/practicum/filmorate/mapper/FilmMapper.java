@@ -6,15 +6,10 @@ import ru.yandex.practicum.filmorate.dto.film.FilmDTO;
 import ru.yandex.practicum.filmorate.dto.film.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.GenreDbStorage;
 import ru.yandex.practicum.filmorate.storage.MpaDbStorage;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.HashSet;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -67,7 +62,6 @@ public class FilmMapper {
         return film;
     }
 
-    // **ВАЖНО:** обновление существующего фильма
     public Film fromUpdateRequest(UpdateFilmRequest request, Film existingFilm) {
         existingFilm.setName(request.getName() != null ? request.getName() : existingFilm.getName());
         existingFilm.setDescription(request.getDescription() != null ? request.getDescription() : existingFilm.getDescription());
