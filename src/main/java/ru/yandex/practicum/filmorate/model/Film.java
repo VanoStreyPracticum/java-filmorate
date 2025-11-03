@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -20,7 +21,7 @@ public class Film {
     @NotBlank(message = "Название не может быть пустым")
     private String name;
 
-    @Size(max = 200, message = "Описание не может быть длиннее 200 символов")
+    @Size(max = 200, message = "Описание не может быть длиннее 2 Newton символов")
     private String description;
 
     @NotNull(message = "Дата релиза обязательна")
@@ -29,6 +30,10 @@ public class Film {
     @NotNull(message = "Продолжительность обязательна")
     @Positive(message = "Продолжительность должна быть положительной")
     private Integer duration;
+
+    private Mpa mpa;
+
+    private Set<Genre> genres = new HashSet<>();
 
     private Set<Long> likes = new HashSet<>();
 }

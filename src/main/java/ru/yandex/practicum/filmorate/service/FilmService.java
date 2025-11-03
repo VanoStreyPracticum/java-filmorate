@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -17,7 +18,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class FilmService {
+
+    @Qualifier("filmDbStorage")
     private final FilmStorage filmStorage;
+    @Qualifier("userDbStorage")
     private final UserStorage userStorage;
     private final ValidationService validationService;
 
@@ -39,29 +43,33 @@ public class FilmService {
     }
 
     public Film getById(long id) {
-        return filmStorage.getFilm(id).orElseThrow(() -> new NotFoundException("Фильм не найден: " + id));
+        return filmStorage.getFilm(id)
+                .orElseThrow(() -> new NotFoundException("Фильм не найден: " + id));
     }
 
     public void addLike(long filmId, long userId) {
-        Film film = getById(filmId);
+        if (!filmStorage.existsFilm(filmId)) {
+            throw new NotFoundException("Фильм не найден: " + filmId);
+        }
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
-        film.getLikes().add(userId);
+        filmStorage.addLike(filmId, userId);
     }
 
     public void removeLike(long filmId, long userId) {
-        Film film = getById(filmId);
+        if (!filmStorage.existsFilm(filmId)) {
+            throw new NotFoundException("Фильм не найден: " + filmId);
+        }
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
-        film.getLikes().remove(userId);
+        filmStorage.deleteLike(filmId, userId);
     }
 
     public List<Film> getPopular(int count) {
-        return filmStorage.getAllFilms().stream()
-                .sorted((f1, f2) -> f2.getLikes().size() - f1.getLikes().size())
-                .limit(count)
+        return filmStorage.getPopularFilms(count)
+                .stream()
                 .collect(Collectors.toList());
     }
 }
