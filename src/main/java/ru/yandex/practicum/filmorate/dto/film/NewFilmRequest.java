@@ -10,9 +10,7 @@ public class NewFilmRequest {
     private String name;
     private String description;
     private LocalDate releaseDate;
-    private Long duration;
-
-    private Integer mpaIds;
-
+    private Integer duration;
+    private Integer mpaId;
     private List<Integer> genreIds;
 }

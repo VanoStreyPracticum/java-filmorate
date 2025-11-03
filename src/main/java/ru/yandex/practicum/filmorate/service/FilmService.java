@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -31,10 +33,10 @@ public class FilmService {
     }
 
     public Film update(Film film) {
-        if (film.getId() == null) {
+        if (film.getId() == null)
+        {
             throw new ValidationException("ID обязателен для обновления фильма");
-        }
-        validationService.validateNewFilm(film);
+        } validationService.validateNewFilm(film);
         return filmStorage.updateFilm(film);
     }
 

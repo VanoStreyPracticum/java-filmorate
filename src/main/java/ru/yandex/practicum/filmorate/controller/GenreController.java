@@ -1,29 +1,36 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.genre.GenresDTO;
+import ru.yandex.practicum.filmorate.mapper.GenreMapper;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.GenreDbStorage;
+import ru.yandex.practicum.filmorate.service.GenreService;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/genres")
+@RequiredArgsConstructor
 public class GenreController {
 
-    private final GenreDbStorage genreDbStorage;
+    private final GenreService genreService;
+    private final GenreMapper genreMapper;
 
     @GetMapping
-    public List<Genre> getAll() {
-        return genreDbStorage.findAll();
+    public ResponseEntity<List<GenresDTO>> getAll() {
+        List<GenresDTO> genres = genreService.getAll()
+                .stream()
+                .map(genreMapper::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(genres);
     }
 
     @GetMapping("/{id}")
-    public Genre getById(@PathVariable int id) {
-        return genreDbStorage.findById(id);
+    public ResponseEntity<GenresDTO> getById(@PathVariable int id) {
+        Genre genre = genreService.getById(id);
+        return ResponseEntity.ok(genreMapper.toDTO(genre));
     }
 }

@@ -6,9 +6,13 @@ import ru.yandex.practicum.filmorate.dto.genre.GenresDTO;
 import ru.yandex.practicum.filmorate.dto.mpa.MpaDTO;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Set;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+@AllArgsConstructor
 @Data
 public class FilmDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -17,11 +21,11 @@ public class FilmDTO {
     private String name;
     private String description;
     private LocalDate releaseDate;
-    private Long duration;
+    private Integer duration;
 
     private MpaDTO mpa;
 
-    private List<GenresDTO> genres;
+    private Set<GenresDTO> genres;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Set<Long> likes;

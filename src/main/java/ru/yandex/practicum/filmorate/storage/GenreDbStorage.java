@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.GenreRowMapper;
@@ -10,6 +11,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import java.util.List;
 
 @Repository
+@Qualifier("genreDbStorage")
 @RequiredArgsConstructor
 public class GenreDbStorage {
     private final JdbcTemplate jdbc;

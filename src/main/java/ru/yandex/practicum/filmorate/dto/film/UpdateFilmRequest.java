@@ -11,10 +11,9 @@ public class UpdateFilmRequest {
     private String name;
     private String description;
     private LocalDate releaseDate;
-    private Long duration;
-
+    private Integer duration;
     private Integer mpaId;
-    private List<Integer> genresIds;
+    private List<Integer> genreIds;
 
     public boolean hasName() {
         return name != null && !name.isBlank();
@@ -32,11 +31,11 @@ public class UpdateFilmRequest {
         return duration != null;
     }
 
-    public boolean hasRating() {
+    public boolean hasMpa() {
         return mpaId != null;
     }
 
     public boolean hasGenres() {
-        return genresIds != null;
+        return genreIds != null;
     }
 }
