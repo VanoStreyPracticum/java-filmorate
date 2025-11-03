@@ -20,7 +20,4 @@ public class GenreMapper {
                 .map(this::toDTO)
                 .collect(Collectors.toSet());
     }
-    public Genre toEntity(GenresDTO dto) {
-        return new Genre(dto.getId(), dto.getName());
-    }
 }

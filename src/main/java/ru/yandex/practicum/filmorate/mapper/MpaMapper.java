@@ -10,8 +10,4 @@ public class MpaMapper {
     public MpaDTO toDTO(Mpa mpa) {
         return new MpaDTO(mpa.getId(), mpa.getName());
     }
-
-    public Mpa toEntity(MpaDTO dto) {
-        return new Mpa(dto.getId(), dto.getName());
-    }
 }
