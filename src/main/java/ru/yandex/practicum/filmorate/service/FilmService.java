@@ -72,4 +72,15 @@ public class FilmService {
                 .stream()
                 .collect(Collectors.toList());
     }
+
+    public List<Film> getFilmsByDirector(int directorId, String sortBy) {
+        if (sortBy.equals("year")) {
+            return (List<Film>) filmStorage.getFilmsByDirectorSortedByYear(directorId);
+        } else if (sortBy.equals("likes")) {
+            return (List<Film>) filmStorage.getFilmsByDirectorSortedByLikes(directorId);
+        } else {
+            throw new IllegalArgumentException("sortBy должен быть 'year' или 'likes'");
+        }
+    }
+
 }
