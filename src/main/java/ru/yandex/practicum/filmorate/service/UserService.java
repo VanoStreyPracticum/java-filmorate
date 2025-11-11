@@ -50,7 +50,7 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден: " + id));
     }
 
-    public boolean existsUser(long id){
+    public boolean existsUser(long id) {
         return userStorage.existsUser(id);
     }
 
