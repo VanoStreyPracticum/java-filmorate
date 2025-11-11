@@ -99,7 +99,7 @@ public class FilmDbStorage implements FilmStorage {
         WHERE film_id = ?
         """;
 
-    // --- 🔽 Новый SQL для режиссёров ---
+    // --- SQL для режиссёров ---
     private static final String SQL_INSERT_FILM_DIRECTOR = """
         MERGE INTO film_directors (film_id, director_id)
         KEY (film_id, director_id)
@@ -140,7 +140,6 @@ public class FilmDbStorage implements FilmStorage {
     private static final String SQL_EXISTS_GENRE = "SELECT COUNT(*) FROM genres WHERE id = ?";
 
     // --- Реализация методов ---
-
     @Override
     public Film addFilm(Film film) {
         if (film.getMpa() != null && !ratingExists(film.getMpa().getId())) {
@@ -195,7 +194,9 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Optional<Film> getFilm(long id) {
         List<Film> films = jdbcTemplate.query(SQL_SELECT_FILM_BY_ID, filmRowMapper, id);
-        if (films.isEmpty()) return Optional.empty();
+        if (films.isEmpty()) {
+            return Optional.empty();
+        }
 
         Film film = films.getFirst();
         loadRelations(film);
@@ -232,7 +233,6 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
-    // --- 🔽 Новые методы для фильмов режиссёра ---
     @Override
     public Collection<Film> getFilmsByDirectorSortedByYear(int directorId) {
         List<Film> films = jdbcTemplate.query(SQL_SELECT_FILMS_BY_DIRECTOR_SORT_YEAR, filmRowMapper, directorId);
@@ -249,7 +249,10 @@ public class FilmDbStorage implements FilmStorage {
 
     // --- Вспомогательные методы ---
     private void saveFilmGenres(Film film) {
-        if (film.getGenres() == null) return;
+        if (film.getGenres() == null) {
+            return;
+        }
+
         List<Genre> uniqueGenres = film.getGenres().stream()
                 .filter(Objects::nonNull)
                 .collect(Collectors.collectingAndThen(
@@ -262,31 +265,45 @@ public class FilmDbStorage implements FilmStorage {
                 ps.setLong(1, film.getId());
                 ps.setInt(2, uniqueGenres.get(i).getId());
             }
-            public int getBatchSize() { return uniqueGenres.size(); }
+
+            public int getBatchSize() {
+                return uniqueGenres.size();
+            }
         });
     }
 
     private void saveFilmDirectors(Film film) {
-        if (film.getDirectors() == null || film.getDirectors().isEmpty()) return;
+        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
+            return;
+        }
 
+        List<Director> directors = new ArrayList<>(film.getDirectors());
         jdbcTemplate.batchUpdate(SQL_INSERT_FILM_DIRECTOR, new BatchPreparedStatementSetter() {
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 ps.setLong(1, film.getId());
-                ps.setInt(2, film.getDirectors().stream().toList().get(i).getId());
+                ps.setInt(2, directors.get(i).getId());
             }
-            public int getBatchSize() { return film.getDirectors().size(); }
+
+            public int getBatchSize() {
+                return directors.size();
+            }
         });
     }
 
     private void loadRelations(Film film) {
         film.setGenres(new LinkedHashSet<>(jdbcTemplate.query(SQL_SELECT_GENRES_BY_FILM_ID, genreRowMapper, film.getId())));
         film.setLikes(new LinkedHashSet<>(jdbcTemplate.queryForList(SQL_SELECT_LIKES_BY_FILM_ID, Long.class, film.getId())));
-        film.setDirectors(new LinkedHashSet<>(jdbcTemplate.query(SQL_SELECT_DIRECTORS_BY_FILM_ID,
-                (rs, rowNum) -> new Director(rs.getInt("id"), rs.getString("name")), film.getId())));
+        film.setDirectors(new LinkedHashSet<>(jdbcTemplate.query(
+                SQL_SELECT_DIRECTORS_BY_FILM_ID,
+                (rs, rowNum) -> new Director(rs.getInt("id"), rs.getString("name")),
+                film.getId()
+        )));
     }
 
     private boolean ratingExists(Integer ratingId) {
-        if (ratingId == null) return true;
+        if (ratingId == null) {
+            return true;
+        }
         Integer count = jdbcTemplate.queryForObject(SQL_EXISTS_RATING, Integer.class, ratingId);
         return count != null && count > 0;
     }
@@ -297,6 +314,8 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void requireFilmExists(Long filmId) {
-        if (!existsFilm(filmId)) throw new NotFoundException("Фильм с id=" + filmId + " не найден");
+        if (!existsFilm(filmId)) {
+            throw new NotFoundException("Фильм с id=" + filmId + " не найден");
+        }
     }
 }
