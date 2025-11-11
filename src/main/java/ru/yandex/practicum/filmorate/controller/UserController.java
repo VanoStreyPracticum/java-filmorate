@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -48,6 +49,16 @@ public class UserController {
         User user = userMapper.fromUpdateRequest(request);
         User updated = userService.update(user);
         return ResponseEntity.ok(userMapper.toDTO(updated));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable long id) {
+        boolean deleted = userService.deleteUser(id);
+        if (deleted) {
+            return ResponseEntity.ok(Map.of("message", "Пользователь удалён")); // ✅ JSON
+        } else {
+            return ResponseEntity.status(404).body(Map.of("error", "Пользователь не найден"));
+        }
     }
 
     @PutMapping("/{id}/friends/{friendId}")
