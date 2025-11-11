@@ -38,6 +38,13 @@ public class FilmService {
         return filmStorage.updateFilm(film);
     }
 
+    public void delete(long id) {
+        if (!filmStorage.existsFilm(id)) {
+            throw new NotFoundException("Фильм не найден: " + id);
+        }
+        filmStorage.deleteFilm(id);
+    }
+
     public Collection<Film> getAll() {
         return filmStorage.getAllFilms();
     }
