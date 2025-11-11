@@ -10,6 +10,8 @@ public interface FilmStorage {
 
     Film updateFilm(Film film);
 
+    void deleteFilm(long id);
+
     Optional<Film> getFilm(long id);
 
     boolean existsFilm(long id);

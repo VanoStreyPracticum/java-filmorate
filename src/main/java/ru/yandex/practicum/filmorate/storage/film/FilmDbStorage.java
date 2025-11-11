@@ -26,6 +26,7 @@ public class FilmDbStorage implements FilmStorage {
     private final FilmRowMapper filmRowMapper = new FilmRowMapper();
     private final GenreRowMapper genreRowMapper = new GenreRowMapper();
 
+    // --- SQL запросы ---
     private static final String SQL_INSERT_FILM = """
         INSERT INTO films (name, description, release_date, duration, mpa_id)
         VALUES (?, ?, ?, ?, ?)
@@ -105,6 +106,20 @@ public class FilmDbStorage implements FilmStorage {
         SELECT COUNT(*) FROM genres WHERE id = ?
         """;
 
+    // --- Новые запросы для удаления фильма ---
+    private static final String SQL_DELETE_FILM_GENRES = """
+        DELETE FROM film_genres WHERE film_id = ?
+        """;
+
+    private static final String SQL_DELETE_FILM_LIKES = """
+        DELETE FROM likes WHERE film_id = ?
+        """;
+
+    private static final String SQL_DELETE_FILM = """
+        DELETE FROM films WHERE id = ?
+        """;
+
+    // --- Методы реализации интерфейса ---
     @Override
     public Film addFilm(Film film) {
         if (film.getMpa() != null && !ratingExists(film.getMpa().getId())) {
@@ -132,7 +147,6 @@ public class FilmDbStorage implements FilmStorage {
         }, keyHolder);
 
         film.setId(keyHolder.getKeyAs(Long.class));
-
         saveFilmGenres(film);
         loadGenresAndLikes(film);
         return film;
@@ -156,11 +170,7 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Optional<Film> getFilm(long id) {
         List<Film> films = jdbcTemplate.query(SQL_SELECT_FILM_BY_ID, filmRowMapper, id);
-
-        if (films.isEmpty()) {
-            return Optional.empty();
-        }
-
+        if (films.isEmpty()) return Optional.empty();
         Film film = films.getFirst();
         loadGenresAndLikes(film);
         return Optional.of(film);
@@ -185,7 +195,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public void deleteLike(Long userId, Long filmId) {
+    public void deleteLike(Long filmId, Long userId) { // исправлен порядок аргументов
         jdbcTemplate.update(SQL_DELETE_LIKE, filmId, userId);
     }
 
@@ -196,10 +206,17 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    @Override
+    public void deleteFilm(long id) {
+        requireFilmExists(id);
+        jdbcTemplate.update(SQL_DELETE_FILM_GENRES, id);
+        jdbcTemplate.update(SQL_DELETE_FILM_LIKES, id);
+        jdbcTemplate.update(SQL_DELETE_FILM, id);
+    }
+
+    // --- Вспомогательные методы ---
     private void saveFilmGenres(Film film) {
-        if (film.getGenres() == null || film.getGenres().isEmpty()) {
-            return;
-        }
+        if (film.getGenres() == null || film.getGenres().isEmpty()) return;
 
         List<Genre> uniqueGenres = film.getGenres().stream()
                 .filter(Objects::nonNull)
