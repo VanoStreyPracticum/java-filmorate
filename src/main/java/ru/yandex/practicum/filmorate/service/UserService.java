@@ -4,12 +4,11 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.ValidationService;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -51,8 +50,19 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден: " + id));
     }
 
+    public boolean existsUser(long id){
+        return userStorage.existsUser(id);
+    }
+
+    public boolean deleteUser(long id) {
+        if (!userStorage.existsUser(id)) {
+            return false;
+        }
+        userStorage.deleteUser(id);
+        return true;
+    }
+
     public void addFriend(long userId, long friendId) {
-        // Проверяем существование обоих пользователей
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
@@ -63,7 +73,6 @@ public class UserService {
     }
 
     public void removeFriend(long userId, long friendId) {
-        // Проверяем существование обоих пользователей
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
@@ -74,25 +83,19 @@ public class UserService {
     }
 
     public List<User> getFriends(long userId) {
-        // Проверяем существование пользователя
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
-        return userStorage.getFriendsList(userId)
-                .stream()
-                .collect(Collectors.toList());
+        return new ArrayList<>(userStorage.getFriendsList(userId));
     }
 
     public List<User> getCommonFriends(long userId, long otherId) {
-        // Проверяем существование обоих пользователей
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
         if (!userStorage.existsUser(otherId)) {
             throw new NotFoundException("Пользователь не найден: " + otherId);
         }
-        return userStorage.getCommonFriends(userId, otherId)
-                .stream()
-                .collect(Collectors.toList());
+        return new ArrayList<>(userStorage.getCommonFriends(userId, otherId));
     }
 }
