@@ -55,11 +55,7 @@ public class UserService {
     }
 
     public boolean deleteUser(long id) {
-        if (!userStorage.existsUser(id)) {
-            return false;
-        }
-        userStorage.deleteUser(id);
-        return true;
+        return userStorage.deleteUser(id);
     }
 
     public void addFriend(long userId, long friendId) {
