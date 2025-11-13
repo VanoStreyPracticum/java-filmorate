@@ -106,15 +106,6 @@ public class FilmDbStorage implements FilmStorage {
         SELECT COUNT(*) FROM genres WHERE id = ?
         """;
 
-    // --- Новые запросы для удаления фильма ---
-    private static final String SQL_DELETE_FILM_GENRES = """
-        DELETE FROM film_genres WHERE film_id = ?
-        """;
-
-    private static final String SQL_DELETE_FILM_LIKES = """
-        DELETE FROM likes WHERE film_id = ?
-        """;
-
     private static final String SQL_DELETE_FILM = """
         DELETE FROM films WHERE id = ?
         """;
@@ -209,8 +200,6 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public void deleteFilm(long id) {
         requireFilmExists(id);
-        jdbcTemplate.update(SQL_DELETE_FILM_GENRES, id);
-        jdbcTemplate.update(SQL_DELETE_FILM_LIKES, id);
         jdbcTemplate.update(SQL_DELETE_FILM, id);
     }
 
