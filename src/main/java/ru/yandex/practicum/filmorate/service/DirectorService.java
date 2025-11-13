@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,9 +30,6 @@ public class DirectorService {
                 .orElseThrow(() -> new NotFoundException("Режиссёр с id=" + id + " не найден"));
     }
 
-    public Optional<Director> getOptionalById(int id) {
-        return directorStorage.getById(id);
-    }
 
     public List<Director> getAll() {
         return directorStorage.getAll();
