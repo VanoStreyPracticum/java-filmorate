@@ -97,13 +97,6 @@ public class UserDbStorage implements UserStorage {
         WHERE user_id = ? AND friend_id = ?
         """;
 
-    private static final String SQL_UPSERT_FRIENDSHIP = """
-        INSERT INTO friends (user_id, friend_id, status)
-        VALUES (?, ?, ?)
-        ON CONFLICT (user_id, friend_id) DO UPDATE
-        SET status = EXCLUDED.status
-        """;
-
     private static final String SQL_DOWNGRADE_FRIENDSHIP = """
         UPDATE friends
         SET status = FALSE
@@ -142,10 +135,9 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public void deleteUser(long userId) {
+    public boolean deleteUser(long userId) {
         requireUserExists(userId);
-        jdbcTemplate.update(SQL_DELETE_FRIEND, userId, userId);
-        jdbcTemplate.update(SQL_DELETE_USER, userId);
+        return jdbcTemplate.update(SQL_DELETE_USER, userId) > 0;
     }
 
     @Override
