@@ -140,6 +140,11 @@ public class FilmDbStorage implements FilmStorage {
     private static final String SQL_EXISTS_GENRE = "SELECT COUNT(*) FROM genres WHERE id = ?";
 
     // --- Реализация методов ---
+    private static final String SQL_DELETE_FILM = """
+        DELETE FROM films WHERE id = ?
+        """;
+
+    // --- Методы реализации интерфейса ---
     @Override
     public Film addFilm(Film film) {
         if (film.getMpa() != null && !ratingExists(film.getMpa().getId())) {
@@ -166,7 +171,6 @@ public class FilmDbStorage implements FilmStorage {
         }, keyHolder);
 
         film.setId(keyHolder.getKeyAs(Long.class));
-
         saveFilmGenres(film);
         saveFilmDirectors(film);
 
@@ -194,10 +198,7 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Optional<Film> getFilm(long id) {
         List<Film> films = jdbcTemplate.query(SQL_SELECT_FILM_BY_ID, filmRowMapper, id);
-        if (films.isEmpty()) {
-            return Optional.empty();
-        }
-
+        if (films.isEmpty()) return Optional.empty();
         Film film = films.getFirst();
         loadRelations(film);
         return Optional.of(film);
@@ -241,6 +242,13 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
+    public void deleteFilm(long id) {
+        requireFilmExists(id);
+        jdbcTemplate.update(SQL_DELETE_FILM, id);
+    }
+
+    // --- Вспомогательные методы ---
+    @Override
     public Collection<Film> getFilmsByDirectorSortedByLikes(int directorId) {
         List<Film> films = jdbcTemplate.query(SQL_SELECT_FILMS_BY_DIRECTOR_SORT_LIKES, filmRowMapper, directorId);
         films.forEach(this::loadRelations);
@@ -249,9 +257,7 @@ public class FilmDbStorage implements FilmStorage {
 
     // --- Вспомогательные методы ---
     private void saveFilmGenres(Film film) {
-        if (film.getGenres() == null) {
-            return;
-        }
+        if (film.getGenres() == null || film.getGenres().isEmpty()) return;
 
         List<Genre> uniqueGenres = film.getGenres().stream()
                 .filter(Objects::nonNull)
