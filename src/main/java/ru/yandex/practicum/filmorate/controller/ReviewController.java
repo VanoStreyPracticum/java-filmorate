@@ -23,7 +23,7 @@ public class ReviewController {
         return reviewService.create(newReview);
     }
 
-    @PostMapping
+    @PutMapping
     public ReviewDto update(@RequestBody UpdateReviewRequest updateReview) {
         log.info("Обновление нового отзыва {}", updateReview);
         return reviewService.update(updateReview);
@@ -42,7 +42,8 @@ public class ReviewController {
     }
 
     @GetMapping
-    public List<ReviewDto> getMany(@RequestParam Long filmId, @RequestParam Long count) {
+    public List<ReviewDto> getMany(@RequestParam(required = false) Long filmId,
+                                   @RequestParam(defaultValue = "10") Long count) {
         log.info("Получение отзывов к отзыву по ID {} в количестве {}", filmId, count);
         return reviewService.findMany(filmId, count);
     }
