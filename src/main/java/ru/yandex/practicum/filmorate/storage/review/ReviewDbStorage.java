@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.sql.PreparedStatement;
@@ -49,8 +50,14 @@ public class ReviewDbStorage implements ReviewStorage {
             "ORDER BY (COALESCE(agg.like_count, 0) - COALESCE(agg.dislike_count, 0)) DESC  " +
             "LIMIT ?";
 
-    private static final String INSERT_LIKE_QUERY = "INSERT INTO review_ratings(user_id, review_id, is_like) " +
-            "VALUES (?, ?, ?)";
+    private static final String INSERT_LIKE_QUERY =
+            "MERGE INTO review_ratings " +
+                    "USING (VALUES (?, ?, ?)) AS src (user_id, review_id, is_like) " +
+                    "ON review_ratings.user_id = src.user_id AND review_ratings.review_id = src.review_id " +
+                    "WHEN MATCHED THEN " +
+                    "  UPDATE SET is_like = src.is_like " +
+                    "WHEN NOT MATCHED THEN " +
+                    "  INSERT (user_id, review_id, is_like) VALUES (src.user_id, src.review_id, src.is_like)";
 
     private static final String DELETE_LIKE_QUERY = "DELETE FROM review_ratings WHERE user_id = ? AND review_id = ?";
 
@@ -98,7 +105,7 @@ public class ReviewDbStorage implements ReviewStorage {
                 review.getReviewId());
         if (updateResult == 0) {
             log.error("не удалось обновить объект {}", review);
-            throw new RuntimeException("Не удалось обновить данные");
+            throw new NotFoundException("Не удалось обновить данные");
         }
         log.info("Успешно обновлен объект {}", review);
         return review;
@@ -110,7 +117,7 @@ public class ReviewDbStorage implements ReviewStorage {
         int deleteResult = jdbc.update(DELETE_QUERY, id);
         if (deleteResult == 0) {
             log.error("Попытка удаления несуществующих данных с ID {}", id);
-            throw new RuntimeException("Попытка удаления несуществующих данных");
+            throw new NotFoundException("Попытка удаления несуществующих данных");
         }
         log.info("Успешно удален объект c ID {}", id);
     }
@@ -124,7 +131,7 @@ public class ReviewDbStorage implements ReviewStorage {
             return review;
         } catch (EmptyResultDataAccessException e) {
             log.error("В базе отсутствует пользователь с ID {}", id);
-            throw new RuntimeException("Пользователь с указанным ID отсутствует");
+            throw new NotFoundException("Пользователь с указанным ID отсутствует");
         }
     }
 
@@ -146,7 +153,7 @@ public class ReviewDbStorage implements ReviewStorage {
         } catch (DataIntegrityViolationException ex) {
             log.error("Не удалось создать лайк от пользователя с ID {}, отзыву с ID {} тип лайка {}",
                     userId, reviewId, isPositive);
-            throw new RuntimeException("Не удалось сохранить данные");
+            throw new NotFoundException("Не удалось сохранить данные");
         }
     }
 
@@ -156,7 +163,7 @@ public class ReviewDbStorage implements ReviewStorage {
         int deleteResult = jdbc.update(DELETE_LIKE_QUERY, userId, reviewId);
         if (deleteResult == 0) {
             log.error("Попытка удаления несуществующих данных userID {}, reviewId {}", userId, reviewId);
-            throw new RuntimeException("Попытка удаления несуществующих данных");
+            throw new NotFoundException("Попытка удаления несуществующих данных");
         }
         log.info("Успешно удален лайк пользователя c ID {} у отзыва с ID {}", userId, reviewId);
     }
