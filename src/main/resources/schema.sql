@@ -81,9 +81,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     content TEXT NOT NULL,
     is_positive BOOLEAN NOT NULL,  -- true = положительный, false = негативный
     user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    film_id BIGINT NOT NULL REFERENCES films (id) ON DELETE CASCADE,
-    useful_score INT DEFAULT 0,     -- рейтинг полезности (изначально 0)
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    film_id BIGINT NOT NULL REFERENCES films (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS review_ratings (
