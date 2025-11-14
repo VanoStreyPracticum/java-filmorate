@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.review.NewReviewRequest;
 import ru.yandex.practicum.filmorate.dto.review.ReviewDto;
@@ -18,15 +19,15 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @PostMapping
-    public ReviewDto create(@RequestBody NewReviewRequest newReview) {
+    public ResponseEntity<ReviewDto> create(@RequestBody NewReviewRequest newReview) {
         log.info("Создание нового отзыва {}", newReview);
-        return reviewService.create(newReview);
+        return ResponseEntity.ok(reviewService.create(newReview));
     }
 
     @PutMapping
-    public ReviewDto update(@RequestBody UpdateReviewRequest updateReview) {
+    public ResponseEntity<ReviewDto> update(@RequestBody UpdateReviewRequest updateReview) {
         log.info("Обновление нового отзыва {}", updateReview);
-        return reviewService.update(updateReview);
+        return ResponseEntity.ok(reviewService.update(updateReview));
     }
 
     @DeleteMapping("/{id}")
@@ -36,16 +37,16 @@ public class ReviewController {
     }
 
     @GetMapping("/{id}")
-    public ReviewDto getById(@PathVariable Long id) {
+    public ResponseEntity<ReviewDto> getById(@PathVariable Long id) {
         log.info("Получение отзыва по ID {}", id);
-        return reviewService.findById(id);
+        return ResponseEntity.ok(reviewService.findById(id));
     }
 
     @GetMapping
-    public List<ReviewDto> getMany(@RequestParam(required = false) Long filmId,
-                                   @RequestParam(defaultValue = "10") Long count) {
+    public ResponseEntity<List<ReviewDto>> getMany(@RequestParam(required = false) Long filmId,
+                                                   @RequestParam(defaultValue = "10") Long count) {
         log.info("Получение отзывов к отзыву по ID {} в количестве {}", filmId, count);
-        return reviewService.findMany(filmId, count);
+        return ResponseEntity.ok(reviewService.findMany(filmId, count));
     }
 
     @PutMapping("{id}/like/{userId}")
