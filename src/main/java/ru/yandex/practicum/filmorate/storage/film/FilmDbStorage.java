@@ -136,10 +136,31 @@ public class FilmDbStorage implements FilmStorage {
         ORDER BY COUNT(l.user_id) DESC
         """;
 
+    private static final String SQL_SELECT_COMMON_FILMS = """
+        SELECT f.id,
+            f.name,
+            f.description,
+            f.release_date,
+            f.duration,
+            f.mpa_id,
+            m.name AS mpa_name
+        FROM films f
+        JOIN mpa m ON f.mpa_id = m.id
+        WHERE f.id IN (
+            SELECT film_id FROM likes WHERE user_id = ?
+        )
+        AND f.id IN (
+            SELECT film_id FROM likes WHERE user_id = ?
+        )
+        ORDER BY (
+            SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
+        ) DESC
+        """;
+
     private static final String SQL_EXISTS_RATING = "SELECT COUNT(*) FROM mpa WHERE id = ?";
+
     private static final String SQL_EXISTS_GENRE = "SELECT COUNT(*) FROM genres WHERE id = ?";
 
-    // --- Реализация методов ---
     private static final String SQL_DELETE_FILM = """
         DELETE FROM films WHERE id = ?
         """;
@@ -247,6 +268,13 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(SQL_DELETE_FILM, id);
     }
 
+    @Override
+    public Collection<Film> getCommonFilms(long userId, long friendId) {
+        List<Film> films = jdbcTemplate.query(SQL_SELECT_COMMON_FILMS, filmRowMapper, userId, friendId);
+        films.forEach(this::loadRelations);
+        return films;
+    }
+
     // --- Вспомогательные методы ---
     @Override
     public Collection<Film> getFilmsByDirectorSortedByLikes(int directorId) {
@@ -255,7 +283,6 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
-    // --- Вспомогательные методы ---
     private void saveFilmGenres(Film film) {
         if (film.getGenres() == null || film.getGenres().isEmpty()) return;
 
