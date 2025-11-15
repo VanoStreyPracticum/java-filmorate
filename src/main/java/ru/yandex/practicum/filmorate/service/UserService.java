@@ -5,6 +5,8 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.util.EventType;
+import ru.yandex.practicum.filmorate.util.OperationType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,10 +18,12 @@ public class UserService {
     @Qualifier("userDbStorage")
     private final UserStorage userStorage;
     private final ValidationService validationService;
+    private final EventService eventService;
 
-    public UserService(UserStorage userStorage, ValidationService validationService) {
+    public UserService(UserStorage userStorage, ValidationService validationService, EventService eventService) {
         this.userStorage = userStorage;
         this.validationService = validationService;
+        this.eventService = eventService;
     }
 
     public User create(User user) {
@@ -66,6 +70,7 @@ public class UserService {
             throw new NotFoundException("Пользователь не найден: " + friendId);
         }
         userStorage.addFriend(userId, friendId);
+        eventService.createEvent(userId, EventType.FRIEND.name(), OperationType.ADD.name(), friendId);
     }
 
     public void removeFriend(long userId, long friendId) {
@@ -76,6 +81,7 @@ public class UserService {
             throw new NotFoundException("Пользователь не найден: " + friendId);
         }
         userStorage.deleteFriend(userId, friendId);
+        eventService.createEvent(userId, EventType.FRIEND.name(), OperationType.REMOVE.name(), friendId);
     }
 
     public List<User> getFriends(long userId) {
