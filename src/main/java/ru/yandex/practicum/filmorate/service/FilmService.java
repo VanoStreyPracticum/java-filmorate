@@ -80,14 +80,23 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
-    public List<Film> getFilmsByDirector(int directorId, String sortBy) {
+    public Collection<Film> getFilmsByDirector(int directorId, String sortBy) {
         if (sortBy.equals("year")) {
-            return (List<Film>) filmStorage.getFilmsByDirectorSortedByYear(directorId);
+            return filmStorage.getFilmsByDirectorSortedByYear(directorId);
         } else if (sortBy.equals("likes")) {
-            return (List<Film>) filmStorage.getFilmsByDirectorSortedByLikes(directorId);
+            return filmStorage.getFilmsByDirectorSortedByLikes(directorId);
         } else {
             throw new IllegalArgumentException("sortBy должен быть 'year' или 'likes'");
         }
     }
 
+    public Collection<Film> getCommonFilms(long userId, long friendId) {
+        if (!userStorage.existsUser(userId)) {
+            throw new NotFoundException("Пользователь не найден: " + userId);
+        }
+        if (!userStorage.existsUser(friendId)) {
+            throw new NotFoundException("Пользователь не найден: " + friendId);
+        }
+        return filmStorage.getCommonFilms(userId, friendId);
+    }
 }
