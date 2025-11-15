@@ -11,7 +11,6 @@ import ru.yandex.practicum.filmorate.dal.mappers.EventRowMapper;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Event;
 
-import java.sql.Timestamp;
 import java.sql.PreparedStatement;
 import java.util.List;
 
@@ -36,7 +35,7 @@ public class EventDbStorage implements EventStorage {
             jdbc.update(connection -> {
                 PreparedStatement ps = connection.prepareStatement(INSERT_EVENT_QUERY,
                         PreparedStatement.RETURN_GENERATED_KEYS);
-                ps.setObject(1, Timestamp.valueOf(event.getTimestamp()));
+                ps.setObject(1, event.getTimestamp());
                 ps.setObject(2, event.getUserId());
                 ps.setObject(3, event.getEventType());
                 ps.setObject(4, event.getOperation());
@@ -60,7 +59,7 @@ public class EventDbStorage implements EventStorage {
 
     @Override
     public List<Event> getEventsByUserId(Long userId) {
-        log.error("Попытка получения листа событий по user_id {}", userId);
+        log.info("Попытка получения листа событий по user_id {}", userId);
         return jdbc.query(SELECT_EVENT_QUERY, rowMapper, userId);
     }
 }

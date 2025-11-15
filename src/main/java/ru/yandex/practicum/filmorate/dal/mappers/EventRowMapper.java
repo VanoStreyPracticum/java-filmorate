@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.model.Event;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 
 @Component
 public class EventRowMapper implements RowMapper<Event> {
@@ -13,7 +14,7 @@ public class EventRowMapper implements RowMapper<Event> {
     public Event mapRow(ResultSet rs, int rowNum) throws SQLException {
         return Event.builder()
                 .eventId(rs.getLong("id"))
-                .timestamp(rs.getTimestamp("timestamp").toLocalDateTime())
+                .timestamp(rs.getLong("timestamp"))
                 .userId(rs.getLong("user_id"))
                 .eventType(rs.getString("event_type"))
                 .operation(rs.getString("operation"))

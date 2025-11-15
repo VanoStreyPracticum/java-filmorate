@@ -90,7 +90,7 @@ public class ReviewDbStorage implements ReviewStorage {
             log.error("В базу не добавлен объект {}", review);
             throw new RuntimeException("Не удалось сохранить данные");
         }
-        log.error("Успешно добавили в базу объект {}", review);
+        log.info("Успешно добавили в базу объект {}", review);
         return review;
     }
 

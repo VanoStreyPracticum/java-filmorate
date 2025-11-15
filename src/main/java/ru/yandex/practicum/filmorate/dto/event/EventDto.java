@@ -4,13 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
 @Builder
 public class EventDto {
-    LocalDateTime timestamp;
+    Long timestamp;
     Long userId;
     String eventType;
     String operation;

@@ -8,7 +8,7 @@ import ru.yandex.practicum.filmorate.mapper.EventMapper;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.storage.event.EventStorage;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -30,11 +30,12 @@ public class EventService {
                 .toList();
     }
 
+
     public void createEvent(Long userId, String eventType, String operation, Long entityId) {
         log.info("Создание события userId {} eventType {} operation {} entityId {}",
                 userId, eventType, operation, entityId);
         Event event = Event.builder()
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now().toEpochMilli())
                 .userId(userId)
                 .eventType(eventType)
                 .operation(operation)

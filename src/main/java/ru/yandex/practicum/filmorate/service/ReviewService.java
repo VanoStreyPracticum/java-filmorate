@@ -37,7 +37,7 @@ public class ReviewService {
         review = reviewStorage.create(review);
         log.info("Был создан новый отзыв {}", review);
         eventService.createEvent(newReview.getUserId(), EventType.REVIEW.name(),
-                OperationType.ADD.name(), newReview.getFilmId());
+                OperationType.ADD.name(), review.getReviewId());
         return ReviewMapper.mapToReviewDto(review);
     }
 
@@ -50,7 +50,7 @@ public class ReviewService {
         Review updatedReview = reviewStorage.update(mappedReview);
         log.info("Обновленный отзыв в базе данных {}", updatedReview);
         eventService.createEvent(updateRequest.getUserId(), EventType.REVIEW.name(),
-                OperationType.UPDATE.name(), updateRequest.getFilmId());
+                OperationType.UPDATE.name(), updatedReview.getReviewId());
         return ReviewMapper.mapToReviewDto(updatedReview);
     }
 
@@ -60,7 +60,7 @@ public class ReviewService {
         reviewStorage.delete(id);
         log.info("Успешно удален отзыв с ID {}", id);
         eventService.createEvent(review.getUserId(), EventType.REVIEW.name(),
-                OperationType.REMOVE.name(), review.getFilmId());
+                OperationType.REMOVE.name(), review.getReviewId());
     }
 
     public ReviewDto findById(Long id) {
