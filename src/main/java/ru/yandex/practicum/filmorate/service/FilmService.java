@@ -72,4 +72,8 @@ public class FilmService {
                 .stream()
                 .collect(Collectors.toList());
     }
+
+    public Collection<Film> getRecommendations(int userId) {
+        return filmStorage.getRecommendedFilms(userId);
+    }
 }
