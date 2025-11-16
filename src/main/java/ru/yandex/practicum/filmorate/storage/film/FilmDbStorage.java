@@ -190,10 +190,6 @@ public class FilmDbStorage implements FilmStorage {
             ) DESC
             """;
 
-    private static final String SQL_EXISTS_RATING = "SELECT COUNT(*) FROM mpa WHERE id = ?";
-
-    private static final String SQL_EXISTS_GENRE = "SELECT COUNT(*) FROM genres WHERE id = ?";
-
     private static final String SQL_DELETE_FILM = """
             DELETE FROM films WHERE id = ?
             """;
@@ -337,7 +333,7 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         recomenndedFilms.stream()
-                .peek(this::loadGenresAndLikes);
+                .peek(this::loadRelations);
 
         return recomenndedFilms;
     }
