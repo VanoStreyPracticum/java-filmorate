@@ -9,6 +9,8 @@ import ru.yandex.practicum.filmorate.dto.review.UpdateReviewRequest;
 import ru.yandex.practicum.filmorate.mapper.ReviewMapper;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
+import ru.yandex.practicum.filmorate.util.EventType;
+import ru.yandex.practicum.filmorate.util.OperationType;
 
 import java.util.List;
 
@@ -17,11 +19,13 @@ import java.util.List;
 public class ReviewService {
     private final ReviewStorage reviewStorage;
     private final ValidationService validationService;
+    private final EventService eventService;
 
     public ReviewService(@Qualifier("reviewDbStorage") ReviewStorage reviewStorage,
-                         ValidationService validationService) {
+                         ValidationService validationService, EventService eventService) {
         this.reviewStorage = reviewStorage;
         this.validationService = validationService;
+        this.eventService = eventService;
     }
 
     public ReviewDto create(NewReviewRequest newReview) {
@@ -32,6 +36,8 @@ public class ReviewService {
         log.info("После маппинга отзыв {}", review);
         review = reviewStorage.create(review);
         log.info("Был создан новый отзыв {}", review);
+        eventService.createEvent(newReview.getUserId(), EventType.REVIEW.name(),
+                OperationType.ADD.name(), review.getReviewId());
         return ReviewMapper.mapToReviewDto(review);
     }
 
@@ -43,13 +49,18 @@ public class ReviewService {
         log.info("Отзыв после маппинга новых полей {}", mappedReview);
         Review updatedReview = reviewStorage.update(mappedReview);
         log.info("Обновленный отзыв в базе данных {}", updatedReview);
+        eventService.createEvent(updateRequest.getUserId(), EventType.REVIEW.name(),
+                OperationType.UPDATE.name(), updatedReview.getReviewId());
         return ReviewMapper.mapToReviewDto(updatedReview);
     }
 
     public void delete(Long id) {
         log.info("Удаление отзыва с ID {}", id);
+        Review review = reviewStorage.findById(id);
         reviewStorage.delete(id);
         log.info("Успешно удален отзыв с ID {}", id);
+        eventService.createEvent(review.getUserId(), EventType.REVIEW.name(),
+                OperationType.REMOVE.name(), review.getReviewId());
     }
 
     public ReviewDto findById(Long id) {
