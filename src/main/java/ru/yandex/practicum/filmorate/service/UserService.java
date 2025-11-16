@@ -1,15 +1,17 @@
 package ru.yandex.practicum.filmorate.service;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.ValidationService;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.util.EventType;
+import ru.yandex.practicum.filmorate.util.OperationType;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -17,10 +19,12 @@ public class UserService {
     @Qualifier("userDbStorage")
     private final UserStorage userStorage;
     private final ValidationService validationService;
+    private final EventService eventService;
 
-    public UserService(UserStorage userStorage, ValidationService validationService) {
+    public UserService(UserStorage userStorage, ValidationService validationService, EventService eventService) {
         this.userStorage = userStorage;
         this.validationService = validationService;
+        this.eventService = eventService;
     }
 
     public User create(User user) {
@@ -51,8 +55,15 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден: " + id));
     }
 
+    public boolean existsUser(long id) {
+        return userStorage.existsUser(id);
+    }
+
+    public boolean deleteUser(long id) {
+        return userStorage.deleteUser(id);
+    }
+
     public void addFriend(long userId, long friendId) {
-        // Проверяем существование обоих пользователей
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
@@ -60,10 +71,10 @@ public class UserService {
             throw new NotFoundException("Пользователь не найден: " + friendId);
         }
         userStorage.addFriend(userId, friendId);
+        eventService.createEvent(userId, EventType.FRIEND.name(), OperationType.ADD.name(), friendId);
     }
 
     public void removeFriend(long userId, long friendId) {
-        // Проверяем существование обоих пользователей
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
@@ -71,28 +82,23 @@ public class UserService {
             throw new NotFoundException("Пользователь не найден: " + friendId);
         }
         userStorage.deleteFriend(userId, friendId);
+        eventService.createEvent(userId, EventType.FRIEND.name(), OperationType.REMOVE.name(), friendId);
     }
 
     public List<User> getFriends(long userId) {
-        // Проверяем существование пользователя
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
-        return userStorage.getFriendsList(userId)
-                .stream()
-                .collect(Collectors.toList());
+        return new ArrayList<>(userStorage.getFriendsList(userId));
     }
 
     public List<User> getCommonFriends(long userId, long otherId) {
-        // Проверяем существование обоих пользователей
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
         if (!userStorage.existsUser(otherId)) {
             throw new NotFoundException("Пользователь не найден: " + otherId);
         }
-        return userStorage.getCommonFriends(userId, otherId)
-                .stream()
-                .collect(Collectors.toList());
+        return new ArrayList<>(userStorage.getCommonFriends(userId, otherId));
     }
 }

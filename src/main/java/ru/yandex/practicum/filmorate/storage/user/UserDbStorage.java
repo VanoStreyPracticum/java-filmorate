@@ -20,8 +20,8 @@ import java.util.Optional;
 @Qualifier("userDbStorage")
 @RequiredArgsConstructor
 public class UserDbStorage implements UserStorage {
-
     private final JdbcTemplate jdbcTemplate;
+
     private final UserRowMapper userRowMapper = new UserRowMapper();
 
     private static final String SQL_INSERT_USER = """
@@ -32,6 +32,11 @@ public class UserDbStorage implements UserStorage {
     private static final String SQL_UPDATE_USER = """
         UPDATE users
         SET email = ?, login = ?, name = ?, birthday = ?
+        WHERE id = ?
+        """;
+
+    private static final String SQL_DELETE_USER = """
+        DELETE FROM users
         WHERE id = ?
         """;
 
@@ -92,13 +97,6 @@ public class UserDbStorage implements UserStorage {
         WHERE user_id = ? AND friend_id = ?
         """;
 
-    private static final String SQL_UPSERT_FRIENDSHIP = """
-        INSERT INTO friends (user_id, friend_id, status)
-        VALUES (?, ?, ?)
-        ON CONFLICT (user_id, friend_id) DO UPDATE
-        SET status = EXCLUDED.status
-        """;
-
     private static final String SQL_DOWNGRADE_FRIENDSHIP = """
         UPDATE friends
         SET status = FALSE
@@ -137,6 +135,12 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
+    public boolean deleteUser(long userId) {
+        requireUserExists(userId);
+        return jdbcTemplate.update(SQL_DELETE_USER, userId) > 0;
+    }
+
+    @Override
     public Optional<User> getUser(long userId) {
         return jdbcTemplate.query(SQL_SELECT_USER_BY_ID, userRowMapper, userId)
                 .stream()
@@ -145,8 +149,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public boolean existsUser(long userId) {
-        Boolean exists = jdbcTemplate.queryForObject(SQL_EXISTS_USER, Boolean.class, userId);
-        return Boolean.TRUE.equals(exists);
+        return jdbcTemplate.queryForObject(SQL_EXISTS_USER, Boolean.class, userId);
     }
 
     @Override
@@ -167,7 +170,7 @@ public class UserDbStorage implements UserStorage {
             jdbcTemplate.update(SQL_INSERT_FRIEND, userId, friendId, false);
         } else {
             jdbcTemplate.update(SQL_CONFIRM_FRIENDSHIP, userId, friendId);
-            jdbcTemplate.update(SQL_UPSERT_FRIENDSHIP, friendId, userId, true);
+            jdbcTemplate.update(SQL_INSERT_FRIEND, friendId, userId, true);
         }
     }
 

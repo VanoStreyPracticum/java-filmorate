@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.dal.mappers.GenreRowMapper;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
@@ -26,6 +27,7 @@ public class FilmDbStorage implements FilmStorage {
     private final FilmRowMapper filmRowMapper = new FilmRowMapper();
     private final GenreRowMapper genreRowMapper = new GenreRowMapper();
 
+    // --- SQL запросы ---
     private static final String SQL_INSERT_FILM = """
             INSERT INTO films (name, description, release_date, duration, mpa_id)
             VALUES (?, ?, ?, ?, ?)
@@ -130,7 +132,73 @@ public class FilmDbStorage implements FilmStorage {
                                              WHERE USER_ID = ?) ul2 ON ul1.FILM_ID = ul2.FILM_ID
                          WHERE ul2.USER_ID IS NULL);
             """;
+    // --- SQL для режиссёров ---
+    private static final String SQL_INSERT_FILM_DIRECTOR = """
+        MERGE INTO film_directors (film_id, director_id)
+        KEY (film_id, director_id)
+        VALUES (?, ?)
+        """;
 
+    private static final String SQL_SELECT_DIRECTORS_BY_FILM_ID = """
+        SELECT d.id, d.name
+        FROM film_directors fd
+        JOIN directors d ON fd.director_id = d.id
+        WHERE fd.film_id = ?
+        ORDER BY d.id
+        """;
+
+    private static final String SQL_SELECT_FILMS_BY_DIRECTOR_SORT_YEAR = """
+        SELECT f.id, f.name, f.description, f.release_date, f.duration,
+               f.mpa_id, m.name AS mpa_name
+        FROM films f
+        JOIN film_directors fd ON f.id = fd.film_id
+        LEFT JOIN mpa m ON f.mpa_id = m.id
+        WHERE fd.director_id = ?
+        ORDER BY f.release_date
+        """;
+
+    private static final String SQL_SELECT_FILMS_BY_DIRECTOR_SORT_LIKES = """
+        SELECT f.id, f.name, f.description, f.release_date, f.duration,
+               f.mpa_id, m.name AS mpa_name
+        FROM films f
+        JOIN film_directors fd ON f.id = fd.film_id
+        LEFT JOIN likes l ON f.id = l.film_id
+        LEFT JOIN mpa m ON f.mpa_id = m.id
+        WHERE fd.director_id = ?
+        GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+        ORDER BY COUNT(l.user_id) DESC
+        """;
+
+    private static final String SQL_SELECT_COMMON_FILMS = """
+        SELECT f.id,
+            f.name,
+            f.description,
+            f.release_date,
+            f.duration,
+            f.mpa_id,
+            m.name AS mpa_name
+        FROM films f
+        JOIN mpa m ON f.mpa_id = m.id
+        WHERE f.id IN (
+            SELECT film_id FROM likes WHERE user_id = ?
+        )
+        AND f.id IN (
+            SELECT film_id FROM likes WHERE user_id = ?
+        )
+        ORDER BY (
+            SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
+        ) DESC
+        """;
+
+    private static final String SQL_EXISTS_RATING = "SELECT COUNT(*) FROM mpa WHERE id = ?";
+
+    private static final String SQL_EXISTS_GENRE = "SELECT COUNT(*) FROM genres WHERE id = ?";
+
+    private static final String SQL_DELETE_FILM = """
+        DELETE FROM films WHERE id = ?
+        """;
+
+    // --- Методы реализации интерфейса ---
     @Override
     public Film addFilm(Film film) {
         if (film.getMpa() != null && !ratingExists(film.getMpa().getId())) {
@@ -146,49 +214,47 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
-
         jdbcTemplate.update(connection -> {
-            PreparedStatement statement = connection.prepareStatement(SQL_INSERT_FILM, Statement.RETURN_GENERATED_KEYS);
-            statement.setString(1, film.getName());
-            statement.setString(2, film.getDescription());
-            statement.setDate(3, film.getReleaseDate() != null ? Date.valueOf(film.getReleaseDate()) : null);
-            statement.setObject(4, film.getDuration());
-            statement.setObject(5, film.getMpa() != null ? film.getMpa().getId() : null);
-            return statement;
+            PreparedStatement ps = connection.prepareStatement(SQL_INSERT_FILM, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, film.getName());
+            ps.setString(2, film.getDescription());
+            ps.setDate(3, film.getReleaseDate() != null ? Date.valueOf(film.getReleaseDate()) : null);
+            ps.setObject(4, film.getDuration());
+            ps.setObject(5, film.getMpa() != null ? film.getMpa().getId() : null);
+            return ps;
         }, keyHolder);
 
         film.setId(keyHolder.getKeyAs(Long.class));
-
         saveFilmGenres(film);
-        loadGenresAndLikes(film);
+        saveFilmDirectors(film);
+
+        loadRelations(film);
         return film;
     }
 
     @Override
     public Film updateFilm(Film film) {
         requireFilmExists(film.getId());
-
         jdbcTemplate.update(SQL_UPDATE_FILM,
                 film.getName(),
                 film.getDescription(),
-                java.sql.Date.valueOf(film.getReleaseDate()),
+                Date.valueOf(film.getReleaseDate()),
                 film.getDuration(),
                 film.getMpa().getId(),
                 film.getId());
 
+        saveFilmGenres(film);
+        saveFilmDirectors(film);
+        loadRelations(film);
         return film;
     }
 
     @Override
     public Optional<Film> getFilm(long id) {
         List<Film> films = jdbcTemplate.query(SQL_SELECT_FILM_BY_ID, filmRowMapper, id);
-
-        if (films.isEmpty()) {
-            return Optional.empty();
-        }
-
+        if (films.isEmpty()) return Optional.empty();
         Film film = films.getFirst();
-        loadGenresAndLikes(film);
+        loadRelations(film);
         return Optional.of(film);
     }
 
@@ -201,7 +267,7 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Collection<Film> getAllFilms() {
         List<Film> films = jdbcTemplate.query(SQL_SELECT_ALL_FILMS, filmRowMapper);
-        films.forEach(this::loadGenresAndLikes);
+        films.forEach(this::loadRelations);
         return films;
     }
 
@@ -211,14 +277,42 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public void deleteLike(Long userId, Long filmId) {
+    public void deleteLike(Long filmId, Long userId) {
         jdbcTemplate.update(SQL_DELETE_LIKE, filmId, userId);
     }
 
     @Override
     public Collection<Film> getPopularFilms(int count) {
         List<Film> films = jdbcTemplate.query(SQL_SELECT_POPULAR_FILMS, filmRowMapper, count);
-        films.forEach(this::loadGenresAndLikes);
+        films.forEach(this::loadRelations);
+        return films;
+    }
+
+    @Override
+    public Collection<Film> getFilmsByDirectorSortedByYear(int directorId) {
+        List<Film> films = jdbcTemplate.query(SQL_SELECT_FILMS_BY_DIRECTOR_SORT_YEAR, filmRowMapper, directorId);
+        films.forEach(this::loadRelations);
+        return films;
+    }
+
+    @Override
+    public void deleteFilm(long id) {
+        requireFilmExists(id);
+        jdbcTemplate.update(SQL_DELETE_FILM, id);
+    }
+
+    @Override
+    public Collection<Film> getCommonFilms(long userId, long friendId) {
+        List<Film> films = jdbcTemplate.query(SQL_SELECT_COMMON_FILMS, filmRowMapper, userId, friendId);
+        films.forEach(this::loadRelations);
+        return films;
+    }
+
+    // --- Вспомогательные методы ---
+    @Override
+    public Collection<Film> getFilmsByDirectorSortedByLikes(int directorId) {
+        List<Film> films = jdbcTemplate.query(SQL_SELECT_FILMS_BY_DIRECTOR_SORT_LIKES, filmRowMapper, directorId);
+        films.forEach(this::loadRelations);
         return films;
     }
 
@@ -249,9 +343,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void saveFilmGenres(Film film) {
-        if (film.getGenres() == null || film.getGenres().isEmpty()) {
-            return;
-        }
+        if (film.getGenres() == null || film.getGenres().isEmpty()) return;
 
         List<Genre> uniqueGenres = film.getGenres().stream()
                 .filter(Objects::nonNull)
@@ -261,31 +353,49 @@ public class FilmDbStorage implements FilmStorage {
                 ));
 
         jdbcTemplate.batchUpdate(SQL_MERGE_FILM_GENRES, new BatchPreparedStatementSetter() {
-            @Override
-            public void setValues(PreparedStatement statement, int i) throws SQLException {
-                statement.setLong(1, film.getId());
-                statement.setInt(2, uniqueGenres.get(i).getId());
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                ps.setLong(1, film.getId());
+                ps.setInt(2, uniqueGenres.get(i).getId());
             }
 
-            @Override
             public int getBatchSize() {
                 return uniqueGenres.size();
             }
         });
     }
 
-    private void loadGenresAndLikes(Film film) {
-        LinkedHashSet<Genre> genres = jdbcTemplate.query(SQL_SELECT_GENRES_BY_FILM_ID, genreRowMapper, film.getId())
-                .stream()
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        film.setGenres(genres);
+    private void saveFilmDirectors(Film film) {
+        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
+            return;
+        }
 
-        Set<Long> likes = new LinkedHashSet<>(jdbcTemplate.queryForList(SQL_SELECT_LIKES_BY_FILM_ID, Long.class, film.getId()));
-        film.setLikes(likes);
+        List<Director> directors = new ArrayList<>(film.getDirectors());
+        jdbcTemplate.batchUpdate(SQL_INSERT_FILM_DIRECTOR, new BatchPreparedStatementSetter() {
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                ps.setLong(1, film.getId());
+                ps.setInt(2, directors.get(i).getId());
+            }
+
+            public int getBatchSize() {
+                return directors.size();
+            }
+        });
+    }
+
+    private void loadRelations(Film film) {
+        film.setGenres(new LinkedHashSet<>(jdbcTemplate.query(SQL_SELECT_GENRES_BY_FILM_ID, genreRowMapper, film.getId())));
+        film.setLikes(new LinkedHashSet<>(jdbcTemplate.queryForList(SQL_SELECT_LIKES_BY_FILM_ID, Long.class, film.getId())));
+        film.setDirectors(new LinkedHashSet<>(jdbcTemplate.query(
+                SQL_SELECT_DIRECTORS_BY_FILM_ID,
+                (rs, rowNum) -> new Director(rs.getInt("id"), rs.getString("name")),
+                film.getId()
+        )));
     }
 
     private boolean ratingExists(Integer ratingId) {
-        if (ratingId == null) return true;
+        if (ratingId == null) {
+            return true;
+        }
         Integer count = jdbcTemplate.queryForObject(SQL_EXISTS_RATING, Integer.class, ratingId);
         return count != null && count > 0;
     }
