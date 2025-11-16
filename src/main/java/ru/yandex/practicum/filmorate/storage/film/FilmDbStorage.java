@@ -18,6 +18,8 @@ import java.sql.Date;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.joining;
+
 @Repository
 @Qualifier("filmDbStorage")
 @RequiredArgsConstructor
@@ -29,120 +31,120 @@ public class FilmDbStorage implements FilmStorage {
 
     // --- SQL запросы ---
     private static final String SQL_INSERT_FILM = """
-        INSERT INTO films (name, description, release_date, duration, mpa_id)
-        VALUES (?, ?, ?, ?, ?)
-        """;
+            INSERT INTO films (name, description, release_date, duration, mpa_id)
+            VALUES (?, ?, ?, ?, ?)
+            """;
 
     private static final String SQL_UPDATE_FILM = """
-        UPDATE films
-        SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ?
-        WHERE id = ?
-        """;
+            UPDATE films
+            SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ?
+            WHERE id = ?
+            """;
 
     private static final String SQL_SELECT_FILM_BY_ID = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        WHERE f.id = ?
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            WHERE f.id = ?
+            """;
 
     private static final String SQL_SELECT_ALL_FILMS = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            """;
 
     private static final String SQL_EXISTS_FILM = """
-        SELECT COUNT(*) > 0 FROM films WHERE id = ?
-        """;
+            SELECT COUNT(*) > 0 FROM films WHERE id = ?
+            """;
 
     private static final String SQL_INSERT_LIKE = """
-        MERGE INTO likes (film_id, user_id)
-        KEY (film_id, user_id)
-        VALUES (?, ?)
-        """;
+            MERGE INTO likes (film_id, user_id)
+            KEY (film_id, user_id)
+            VALUES (?, ?)
+            """;
 
     private static final String SQL_DELETE_LIKE = """
-        DELETE FROM likes WHERE film_id = ? AND user_id = ?
-        """;
+            DELETE FROM likes WHERE film_id = ? AND user_id = ?
+            """;
 
     private static final String SQL_SELECT_POPULAR_FILMS = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        LEFT JOIN likes l ON f.id = l.film_id
-        GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
-        ORDER BY COUNT(l.user_id) DESC
-        LIMIT ?
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+            ORDER BY COUNT(l.user_id) DESC
+            LIMIT ?
+            """;
 
     private static final String SQL_MERGE_FILM_GENRES = """
-        MERGE INTO film_genres (film_id, genre_id)
-        KEY (film_id, genre_id)
-        VALUES (?, ?)
-        """;
+            MERGE INTO film_genres (film_id, genre_id)
+            KEY (film_id, genre_id)
+            VALUES (?, ?)
+            """;
 
     private static final String SQL_SELECT_GENRES_BY_FILM_ID = """
-        SELECT g.id, g.name
-        FROM film_genres fg
-        JOIN genres g ON fg.genre_id = g.id
-        WHERE fg.film_id = ?
-        ORDER BY g.id
-        """;
+            SELECT g.id, g.name
+            FROM film_genres fg
+            JOIN genres g ON fg.genre_id = g.id
+            WHERE fg.film_id = ?
+            ORDER BY g.id
+            """;
 
     private static final String SQL_SELECT_LIKES_BY_FILM_ID = """
-        SELECT user_id
-        FROM likes
-        WHERE film_id = ?
-        """;
+            SELECT user_id
+            FROM likes
+            WHERE film_id = ?
+            """;
 
     // --- SQL для режиссёров ---
     private static final String SQL_INSERT_FILM_DIRECTOR = """
-        MERGE INTO film_directors (film_id, director_id)
-        KEY (film_id, director_id)
-        VALUES (?, ?)
-        """;
+            MERGE INTO film_directors (film_id, director_id)
+            KEY (film_id, director_id)
+            VALUES (?, ?)
+            """;
 
     private static final String SQL_SELECT_DIRECTORS_BY_FILM_ID = """
-        SELECT d.id, d.name
-        FROM film_directors fd
-        JOIN directors d ON fd.director_id = d.id
-        WHERE fd.film_id = ?
-        ORDER BY d.id
-        """;
+            SELECT d.id, d.name
+            FROM film_directors fd
+            JOIN directors d ON fd.director_id = d.id
+            WHERE fd.film_id = ?
+            ORDER BY d.id
+            """;
 
     private static final String SQL_SELECT_FILMS_BY_DIRECTOR_SORT_YEAR = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        JOIN film_directors fd ON f.id = fd.film_id
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        WHERE fd.director_id = ?
-        ORDER BY f.release_date
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            JOIN film_directors fd ON f.id = fd.film_id
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            WHERE fd.director_id = ?
+            ORDER BY f.release_date
+            """;
 
     private static final String SQL_SELECT_FILMS_BY_DIRECTOR_SORT_LIKES = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        JOIN film_directors fd ON f.id = fd.film_id
-        LEFT JOIN likes l ON f.id = l.film_id
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        WHERE fd.director_id = ?
-        GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
-        ORDER BY COUNT(l.user_id) DESC
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            JOIN film_directors fd ON f.id = fd.film_id
+            LEFT JOIN likes l ON f.id = l.film_id
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            WHERE fd.director_id = ?
+            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+            ORDER BY COUNT(l.user_id) DESC
+            """;
 
     private static final String SQL_EXISTS_RATING = "SELECT COUNT(*) FROM mpa WHERE id = ?";
     private static final String SQL_EXISTS_GENRE = "SELECT COUNT(*) FROM genres WHERE id = ?";
 
     // --- Реализация методов ---
     private static final String SQL_DELETE_FILM = """
-        DELETE FROM films WHERE id = ?
-        """;
+            DELETE FROM films WHERE id = ?
+            """;
 
     // --- Методы реализации интерфейса ---
     @Override
@@ -231,6 +233,85 @@ public class FilmDbStorage implements FilmStorage {
     public Collection<Film> getPopularFilms(int count) {
         List<Film> films = jdbcTemplate.query(SQL_SELECT_POPULAR_FILMS, filmRowMapper, count);
         films.forEach(this::loadRelations);
+        return films;
+    }
+
+    @Override
+    public Collection<Film> getPopularFilms(int count, Integer genreId, Integer year) {
+        StringBuilder sql = new StringBuilder("""
+                    SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                           f.mpa_id, m.name AS mpa_name,
+                           COUNT (l.user_id) AS likes_count
+                    FROM films f
+                    LEFT JOIN mpa m ON f.mpa_id = m.id
+                    LEFT JOIN likes l ON f.id = l.film_id
+                """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (genreId != null) {
+            sql.append(" JOIN film_genres fg ON f.id = fg.film_id AND fg.genre_id = ?");
+            params.add(genreId);
+        }
+
+        sql.append(" WHERE 1=1 ");
+
+        if (year != null) {
+            sql.append(" AND EXTRACT(YEAR FROM f.release_date) = ?");
+            params.add(year);
+        }
+
+        sql.append("""
+                    GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+                    ORDER BY likes_count DESC
+                    LIMIT ?
+                """);
+        params.add(count);
+
+        List<Film> films = jdbcTemplate.query(sql.toString(), filmRowMapper, params.toArray());
+
+        if (films.isEmpty()) {
+            return films;
+        }
+
+        List<Long> filmIds = films.stream().map(Film::getId).toList();
+
+        String genresSql = """
+                    SELECT fg.film_id, g.id, g.name
+                    FROM film_genres fg
+                    JOIN genres g ON fg.genre_id = g.id
+                    WHERE fg.film_id IN (%s)
+                """.formatted(filmIds.stream().map(id -> "?").collect(joining(",")));
+
+        Map<Long, Set<Genre>> genresByFilm = new HashMap<>();
+
+        jdbcTemplate.query(genresSql, rs -> {
+            long filmId = rs.getLong("film_id");
+            genresByFilm
+                    .computeIfAbsent(filmId, k -> new LinkedHashSet<>())
+                    .add(new Genre(rs.getInt("id"), rs.getString("name")));
+        }, filmIds.toArray());
+
+        String likesSql = """
+                    SELECT film_id, user_id
+                    FROM likes
+                    WHERE film_id IN (%s)
+                """.formatted(filmIds.stream().map(id -> "?").collect(joining(",")));
+
+        Map<Long, Set<Long>> likesByFilm = new HashMap<>();
+
+        jdbcTemplate.query(likesSql, rs -> {
+            long filmId = rs.getLong("film_id");
+            likesByFilm
+                    .computeIfAbsent(filmId, k -> new HashSet<>())
+                    .add(rs.getLong("user_id"));
+        }, filmIds.toArray());
+
+        for (Film film : films) {
+            film.setGenres(genresByFilm.getOrDefault(film.getId(), new LinkedHashSet<>()));
+            film.setLikes(likesByFilm.getOrDefault(film.getId(), new HashSet<>()));
+        }
+
         return films;
     }
 

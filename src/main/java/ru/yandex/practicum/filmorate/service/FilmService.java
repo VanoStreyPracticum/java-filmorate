@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -74,10 +75,14 @@ public class FilmService {
         filmStorage.deleteLike(filmId, userId);
     }
 
-    public List<Film> getPopular(int count) {
-        return filmStorage.getPopularFilms(count)
-                .stream()
-                .collect(Collectors.toList());
+    public Collection<Film> getPopular(Integer count, Integer genreId, Integer year) {
+        int limit = (count == null || count <= 0) ? 10 : count;
+
+        if (genreId == null && year == null) {
+            return filmStorage.getPopularFilms(limit);
+        }
+
+        return filmStorage.getPopularFilms(limit, genreId, year);
     }
 
     public List<Film> getFilmsByDirector(int directorId, String sortBy) {
