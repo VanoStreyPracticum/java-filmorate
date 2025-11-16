@@ -100,9 +100,9 @@ public class UserController {
 
     @GetMapping("/{id}/recommendations")
     public Collection<Film> getRecommendations(@PathVariable int id) {
-        return filmService.getRecommendations(id); 
+        return filmService.getRecommendations(id);
     }
-  
+
     @GetMapping("/{id}/feed")
     public ResponseEntity<List<EventDto>> getFeedByUserId(@PathVariable long id) {
         List<EventDto> feed = eventService.getUserFeed(id);
