@@ -134,69 +134,69 @@ public class FilmDbStorage implements FilmStorage {
             """;
     // --- SQL для режиссёров ---
     private static final String SQL_INSERT_FILM_DIRECTOR = """
-        MERGE INTO film_directors (film_id, director_id)
-        KEY (film_id, director_id)
-        VALUES (?, ?)
-        """;
+            MERGE INTO film_directors (film_id, director_id)
+            KEY (film_id, director_id)
+            VALUES (?, ?)
+            """;
 
     private static final String SQL_SELECT_DIRECTORS_BY_FILM_ID = """
-        SELECT d.id, d.name
-        FROM film_directors fd
-        JOIN directors d ON fd.director_id = d.id
-        WHERE fd.film_id = ?
-        ORDER BY d.id
-        """;
+            SELECT d.id, d.name
+            FROM film_directors fd
+            JOIN directors d ON fd.director_id = d.id
+            WHERE fd.film_id = ?
+            ORDER BY d.id
+            """;
 
     private static final String SQL_SELECT_FILMS_BY_DIRECTOR_SORT_YEAR = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        JOIN film_directors fd ON f.id = fd.film_id
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        WHERE fd.director_id = ?
-        ORDER BY f.release_date
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            JOIN film_directors fd ON f.id = fd.film_id
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            WHERE fd.director_id = ?
+            ORDER BY f.release_date
+            """;
 
     private static final String SQL_SELECT_FILMS_BY_DIRECTOR_SORT_LIKES = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        JOIN film_directors fd ON f.id = fd.film_id
-        LEFT JOIN likes l ON f.id = l.film_id
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        WHERE fd.director_id = ?
-        GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
-        ORDER BY COUNT(l.user_id) DESC
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            JOIN film_directors fd ON f.id = fd.film_id
+            LEFT JOIN likes l ON f.id = l.film_id
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            WHERE fd.director_id = ?
+            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+            ORDER BY COUNT(l.user_id) DESC
+            """;
 
     private static final String SQL_SELECT_COMMON_FILMS = """
-        SELECT f.id,
-            f.name,
-            f.description,
-            f.release_date,
-            f.duration,
-            f.mpa_id,
-            m.name AS mpa_name
-        FROM films f
-        JOIN mpa m ON f.mpa_id = m.id
-        WHERE f.id IN (
-            SELECT film_id FROM likes WHERE user_id = ?
-        )
-        AND f.id IN (
-            SELECT film_id FROM likes WHERE user_id = ?
-        )
-        ORDER BY (
-            SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
-        ) DESC
-        """;
+            SELECT f.id,
+                f.name,
+                f.description,
+                f.release_date,
+                f.duration,
+                f.mpa_id,
+                m.name AS mpa_name
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            WHERE f.id IN (
+                SELECT film_id FROM likes WHERE user_id = ?
+            )
+            AND f.id IN (
+                SELECT film_id FROM likes WHERE user_id = ?
+            )
+            ORDER BY (
+                SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
+            ) DESC
+            """;
 
     private static final String SQL_EXISTS_RATING = "SELECT COUNT(*) FROM mpa WHERE id = ?";
 
     private static final String SQL_EXISTS_GENRE = "SELECT COUNT(*) FROM genres WHERE id = ?";
 
     private static final String SQL_DELETE_FILM = """
-        DELETE FROM films WHERE id = ?
-        """;
+            DELETE FROM films WHERE id = ?
+            """;
 
     // --- Методы реализации интерфейса ---
     @Override
