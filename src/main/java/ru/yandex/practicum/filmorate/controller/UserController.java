@@ -3,11 +3,13 @@ package ru.yandex.practicum.filmorate.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.event.EventDto;
 import ru.yandex.practicum.filmorate.dto.user.NewUserRequest;
 import ru.yandex.practicum.filmorate.dto.user.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.user.UserDTO;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.EventService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.List;
@@ -21,6 +23,7 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
+    private final EventService eventService;
 
     @GetMapping
     public ResponseEntity<List<UserDTO>> getAll() {
@@ -89,5 +92,11 @@ public class UserController {
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(common);
+    }
+
+    @GetMapping("/{id}/feed")
+    public ResponseEntity<List<EventDto>> getFeedByUserId(@PathVariable long id) {
+        List<EventDto> feed = eventService.getUserFeed(id);
+        return ResponseEntity.ok(feed);
     }
 }
