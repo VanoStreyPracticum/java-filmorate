@@ -9,6 +9,8 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.util.EventType;
+import ru.yandex.practicum.filmorate.util.OperationType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,6 +27,7 @@ public class FilmService {
     @Qualifier("userDbStorage")
     private final UserStorage userStorage;
     private final ValidationService validationService;
+    private final EventService eventService;
 
     public Film create(Film film) {
         validationService.validateNewFilm(film);
@@ -63,6 +66,7 @@ public class FilmService {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
         filmStorage.addLike(filmId, userId);
+        eventService.createEvent(userId, EventType.LIKE.name(), OperationType.ADD.name(), filmId);
     }
 
     public void removeLike(long filmId, long userId) {
@@ -73,6 +77,7 @@ public class FilmService {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
         filmStorage.deleteLike(filmId, userId);
+        eventService.createEvent(userId, EventType.LIKE.name(), OperationType.REMOVE.name(), filmId);
     }
 
     public Collection<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
@@ -95,4 +100,13 @@ public class FilmService {
         }
     }
 
+    public Collection<Film> getCommonFilms(long userId, long friendId) {
+        if (!userStorage.existsUser(userId)) {
+            throw new NotFoundException("Пользователь не найден: " + userId);
+        }
+        if (!userStorage.existsUser(friendId)) {
+            throw new NotFoundException("Пользователь не найден: " + friendId);
+        }
+        return filmStorage.getCommonFilms(userId, friendId);
+    }
 }
