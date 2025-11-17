@@ -139,25 +139,25 @@ public class FilmDbStorage implements FilmStorage {
             """;
 
     private static final String SQL_SELECT_COMMON_FILMS = """
-            SELECT f.id,
-                f.name,
-                f.description,
-                f.release_date,
-                f.duration,
-                f.mpa_id,
-                m.name AS mpa_name
-            FROM films f
-            JOIN mpa m ON f.mpa_id = m.id
-            WHERE f.id IN (
-                SELECT film_id FROM likes WHERE user_id = ?
-            )
-            AND f.id IN (
-                SELECT film_id FROM likes WHERE user_id = ?
-            )
-            ORDER BY (
-                SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
-            ) DESC
-            """;
+        SELECT f.id,
+            f.name,
+            f.description,
+            f.release_date,
+            f.duration,
+            f.mpa_id,
+            m.name AS mpa_name
+        FROM films f
+        JOIN mpa m ON f.mpa_id = m.id
+        WHERE f.id IN (
+            SELECT film_id FROM likes WHERE user_id = ?
+        )
+        AND f.id IN (
+            SELECT film_id FROM likes WHERE user_id = ?
+        )
+        ORDER BY (
+            SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
+        ) DESC
+        """;
 
     private static final String SQL_EXISTS_RATING = "SELECT COUNT(*) FROM mpa WHERE id = ?";
 
