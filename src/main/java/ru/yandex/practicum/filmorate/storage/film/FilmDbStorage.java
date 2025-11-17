@@ -29,141 +29,170 @@ public class FilmDbStorage implements FilmStorage {
 
     // --- SQL запросы ---
     private static final String SQL_INSERT_FILM = """
-        INSERT INTO films (name, description, release_date, duration, mpa_id)
-        VALUES (?, ?, ?, ?, ?)
-        """;
+            INSERT INTO films (name, description, release_date, duration, mpa_id)
+            VALUES (?, ?, ?, ?, ?)
+            """;
 
     private static final String SQL_UPDATE_FILM = """
-        UPDATE films
-        SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ?
-        WHERE id = ?
-        """;
+            UPDATE films
+            SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ?
+            WHERE id = ?
+            """;
 
     private static final String SQL_SELECT_FILM_BY_ID = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        WHERE f.id = ?
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            WHERE f.id = ?
+            """;
 
     private static final String SQL_SELECT_ALL_FILMS = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            """;
 
     private static final String SQL_EXISTS_FILM = """
-        SELECT COUNT(*) > 0 FROM films WHERE id = ?
-        """;
+            SELECT COUNT(*) > 0 FROM films WHERE id = ?
+            """;
 
     private static final String SQL_INSERT_LIKE = """
-        MERGE INTO likes (film_id, user_id)
-        KEY (film_id, user_id)
-        VALUES (?, ?)
-        """;
+            MERGE INTO likes (film_id, user_id)
+            KEY (film_id, user_id)
+            VALUES (?, ?)
+            """;
 
     private static final String SQL_DELETE_LIKE = """
-        DELETE FROM likes WHERE film_id = ? AND user_id = ?
-        """;
+            DELETE FROM likes WHERE film_id = ? AND user_id = ?
+            """;
 
     private static final String SQL_SELECT_POPULAR_FILMS = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        LEFT JOIN likes l ON f.id = l.film_id
-        GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
-        ORDER BY COUNT(l.user_id) DESC
-        LIMIT ?
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+            ORDER BY COUNT(l.user_id) DESC
+            LIMIT ?
+            """;
 
     private static final String SQL_MERGE_FILM_GENRES = """
-        MERGE INTO film_genres (film_id, genre_id)
-        KEY (film_id, genre_id)
-        VALUES (?, ?)
-        """;
+            MERGE INTO film_genres (film_id, genre_id)
+            KEY (film_id, genre_id)
+            VALUES (?, ?)
+            """;
 
     private static final String SQL_SELECT_GENRES_BY_FILM_ID = """
-        SELECT g.id, g.name
-        FROM film_genres fg
-        JOIN genres g ON fg.genre_id = g.id
-        WHERE fg.film_id = ?
-        ORDER BY g.id
-        """;
+            SELECT g.id, g.name
+            FROM film_genres fg
+            JOIN genres g ON fg.genre_id = g.id
+            WHERE fg.film_id = ?
+            ORDER BY g.id
+            """;
 
     private static final String SQL_SELECT_LIKES_BY_FILM_ID = """
-        SELECT user_id
-        FROM likes
-        WHERE film_id = ?
-        """;
+            SELECT user_id
+            FROM likes
+            WHERE film_id = ?
+            """;
 
+    private static final String SQL_EXISTS_RATING = """
+            SELECT COUNT(*) FROM mpa WHERE id = ?
+            """;
+
+    private static final String SQL_EXISTS_GENRE = """
+            SELECT COUNT(*) FROM genres WHERE id = ?
+            """;
+
+    private static final String SQL_SELECT_USERS_WITH_SIMILAR_TASTES = """
+            SELECT ul2.user_id
+            FROM (SELECT *
+                  FROM LIKES
+                  WHERE USER_ID = ?) AS ul1
+                     JOIN LIKES AS ul2 ON ul1.FILM_ID = ul2.FILM_ID
+                AND ul1.user_id != ul2.user_id
+            GROUP BY ul2.user_id, ul2.user_id
+            ORDER BY COUNT(*) DESC;
+            """;
+
+    private static final String SQL_SELECT_RECOMMENDED_FILMS = """
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM FILMS AS f
+                     JOIN MPA AS m ON m.id = f.mpa_id
+            WHERE f.id IN (SELECT ul1.FILM_ID
+                         FROM (SELECT *
+                               FROM LIKES
+                               WHERE USER_ID = ?) AS ul1
+                                  LEFT JOIN (SELECT *
+                                             FROM LIKES
+                                             WHERE USER_ID = ?) ul2 ON ul1.FILM_ID = ul2.FILM_ID
+                         WHERE ul2.USER_ID IS NULL);
+            """;
     // --- SQL для режиссёров ---
     private static final String SQL_INSERT_FILM_DIRECTOR = """
-        MERGE INTO film_directors (film_id, director_id)
-        KEY (film_id, director_id)
-        VALUES (?, ?)
-        """;
+            MERGE INTO film_directors (film_id, director_id)
+            KEY (film_id, director_id)
+            VALUES (?, ?)
+            """;
 
     private static final String SQL_SELECT_DIRECTORS_BY_FILM_ID = """
-        SELECT d.id, d.name
-        FROM film_directors fd
-        JOIN directors d ON fd.director_id = d.id
-        WHERE fd.film_id = ?
-        ORDER BY d.id
-        """;
+            SELECT d.id, d.name
+            FROM film_directors fd
+            JOIN directors d ON fd.director_id = d.id
+            WHERE fd.film_id = ?
+            ORDER BY d.id
+            """;
 
     private static final String SQL_SELECT_FILMS_BY_DIRECTOR_SORT_YEAR = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        JOIN film_directors fd ON f.id = fd.film_id
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        WHERE fd.director_id = ?
-        ORDER BY f.release_date
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            JOIN film_directors fd ON f.id = fd.film_id
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            WHERE fd.director_id = ?
+            ORDER BY f.release_date
+            """;
 
     private static final String SQL_SELECT_FILMS_BY_DIRECTOR_SORT_LIKES = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        JOIN film_directors fd ON f.id = fd.film_id
-        LEFT JOIN likes l ON f.id = l.film_id
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        WHERE fd.director_id = ?
-        GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
-        ORDER BY COUNT(l.user_id) DESC
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            JOIN film_directors fd ON f.id = fd.film_id
+            LEFT JOIN likes l ON f.id = l.film_id
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            WHERE fd.director_id = ?
+            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+            ORDER BY COUNT(l.user_id) DESC
+            """;
 
     private static final String SQL_SELECT_COMMON_FILMS = """
-        SELECT f.id,
-            f.name,
-            f.description,
-            f.release_date,
-            f.duration,
-            f.mpa_id,
-            m.name AS mpa_name
-        FROM films f
-        JOIN mpa m ON f.mpa_id = m.id
-        WHERE f.id IN (
-            SELECT film_id FROM likes WHERE user_id = ?
-        )
-        AND f.id IN (
-            SELECT film_id FROM likes WHERE user_id = ?
-        )
-        ORDER BY (
-            SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
-        ) DESC
-        """;
-
-    private static final String SQL_EXISTS_RATING = "SELECT COUNT(*) FROM mpa WHERE id = ?";
-
-    private static final String SQL_EXISTS_GENRE = "SELECT COUNT(*) FROM genres WHERE id = ?";
+            SELECT f.id,
+                f.name,
+                f.description,
+                f.release_date,
+                f.duration,
+                f.mpa_id,
+                m.name AS mpa_name
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            WHERE f.id IN (
+                SELECT film_id FROM likes WHERE user_id = ?
+            )
+            AND f.id IN (
+                SELECT film_id FROM likes WHERE user_id = ?
+            )
+            ORDER BY (
+                SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
+            ) DESC
+            """;
 
     private static final String SQL_DELETE_FILM = """
-        DELETE FROM films WHERE id = ?
-        """;
+            DELETE FROM films WHERE id = ?
+            """;
 
     // --- Методы реализации интерфейса ---
     @Override
@@ -283,6 +312,32 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    @Override
+    public Collection<Film> getRecommendedFilms(int userId) {
+        List<Integer> usersWithSimilarTastes = jdbcTemplate.queryForList(SQL_SELECT_USERS_WITH_SIMILAR_TASTES,
+                Integer.class, userId);
+
+        List<Film> recomenndedFilms = new ArrayList<>();
+
+        for (Integer id : usersWithSimilarTastes) {
+            recomenndedFilms = jdbcTemplate.query(con -> {
+                var ps = con.prepareStatement(SQL_SELECT_RECOMMENDED_FILMS);
+                ps.setInt(1, id);
+                ps.setInt(2, userId);
+                return ps;
+            }, new FilmRowMapper());
+
+            if (!recomenndedFilms.isEmpty()) {
+                break;
+            }
+        }
+
+        recomenndedFilms.stream()
+                .peek(this::loadRelations);
+
+        return recomenndedFilms;
+    }
+
     private void saveFilmGenres(Film film) {
         if (film.getGenres() == null || film.getGenres().isEmpty()) return;
 
@@ -351,4 +406,5 @@ public class FilmDbStorage implements FilmStorage {
             throw new NotFoundException("Фильм с id=" + filmId + " не найден");
         }
     }
+
 }

@@ -85,6 +85,10 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public Collection<Film> getRecommendations(int userId) {
+        return filmStorage.getRecommendedFilms(userId);
+    }
+
     public Collection<Film> getFilmsByDirector(int directorId, String sortBy) {
         if (sortBy.equals("year")) {
             return filmStorage.getFilmsByDirectorSortedByYear(directorId);
