@@ -18,7 +18,6 @@ import java.sql.Date;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.joining;
 
 @Repository
 @Qualifier("filmDbStorage")
@@ -191,10 +190,6 @@ public class FilmDbStorage implements FilmStorage {
                 SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
             ) DESC
             """;
-
-    private static final String SQL_EXISTS_RATING = "SELECT COUNT(*) FROM mpa WHERE id = ?";
-
-    private static final String SQL_EXISTS_GENRE = "SELECT COUNT(*) FROM genres WHERE id = ?";
 
     private static final String SQL_DELETE_FILM = """
             DELETE FROM films WHERE id = ?
