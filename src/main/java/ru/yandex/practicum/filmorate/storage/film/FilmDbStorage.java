@@ -139,25 +139,25 @@ public class FilmDbStorage implements FilmStorage {
             """;
 
     private static final String SQL_SELECT_COMMON_FILMS = """
-        SELECT f.id,
-            f.name,
-            f.description,
-            f.release_date,
-            f.duration,
-            f.mpa_id,
-            m.name AS mpa_name
-        FROM films f
-        JOIN mpa m ON f.mpa_id = m.id
-        WHERE f.id IN (
-            SELECT film_id FROM likes WHERE user_id = ?
-        )
-        AND f.id IN (
-            SELECT film_id FROM likes WHERE user_id = ?
-        )
-        ORDER BY (
-            SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
-        ) DESC
-        """;
+            SELECT f.id,
+                f.name,
+                f.description,
+                f.release_date,
+                f.duration,
+                f.mpa_id,
+                m.name AS mpa_name
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            WHERE f.id IN (
+                SELECT film_id FROM likes WHERE user_id = ?
+            )
+            AND f.id IN (
+                SELECT film_id FROM likes WHERE user_id = ?
+            )
+            ORDER BY (
+                SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id
+            ) DESC
+            """;
 
     private static final String SQL_EXISTS_RATING = "SELECT COUNT(*) FROM mpa WHERE id = ?";
 
@@ -165,6 +165,28 @@ public class FilmDbStorage implements FilmStorage {
 
     private static final String SQL_DELETE_FILM = """
             DELETE FROM films WHERE id = ?
+            """;
+
+    private static final String SQL_SELECT_POPULAR_FILTER = """
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name,
+                   COUNT(l.user_id) AS likes_count
+            FROM films f
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            """;
+
+    private static final String SQL_SELECT_GENRES_FOR_FILMS = """
+            SELECT fg.film_id, g.id, g.name
+            FROM film_genres fg
+            JOIN genres g ON fg.genre_id = g.id
+            WHERE fg.film_id IN (%s)
+            """;
+
+    private static final String SQL_SELECT_LIKES_FOR_FILMS = """
+            SELECT film_id, user_id
+            FROM likes
+            WHERE film_id IN (%s)
             """;
 
     // --- Методы реализации интерфейса ---
@@ -259,14 +281,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Collection<Film> getPopularFilms(int count, Integer genreId, Integer year) {
-        StringBuilder sql = new StringBuilder("""
-                    SELECT f.id, f.name, f.description, f.release_date, f.duration,
-                           f.mpa_id, m.name AS mpa_name,
-                           COUNT (l.user_id) AS likes_count
-                    FROM films f
-                    LEFT JOIN mpa m ON f.mpa_id = m.id
-                    LEFT JOIN likes l ON f.id = l.film_id
-                """);
+        StringBuilder sql = new StringBuilder(SQL_SELECT_POPULAR_FILTER);
 
         List<Object> params = new ArrayList<>();
 
@@ -296,32 +311,18 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         List<Long> filmIds = films.stream().map(Film::getId).toList();
-
-        String genresSql = """
-                    SELECT fg.film_id, g.id, g.name
-                    FROM film_genres fg
-                    JOIN genres g ON fg.genre_id = g.id
-                    WHERE fg.film_id IN (%s)
-                """.formatted(filmIds.stream().map(id -> "?").collect(joining(",")));
+        String genresSql = filmIds.stream().map(id -> "?").collect(Collectors.joining(","));
 
         Map<Long, Set<Genre>> genresByFilm = new HashMap<>();
-
-        jdbcTemplate.query(genresSql, rs -> {
+        jdbcTemplate.query(SQL_SELECT_GENRES_FOR_FILMS.formatted(genresSql), rs -> {
             long filmId = rs.getLong("film_id");
             genresByFilm
                     .computeIfAbsent(filmId, k -> new LinkedHashSet<>())
                     .add(new Genre(rs.getInt("id"), rs.getString("name")));
         }, filmIds.toArray());
 
-        String likesSql = """
-                    SELECT film_id, user_id
-                    FROM likes
-                    WHERE film_id IN (%s)
-                """.formatted(filmIds.stream().map(id -> "?").collect(joining(",")));
-
         Map<Long, Set<Long>> likesByFilm = new HashMap<>();
-
-        jdbcTemplate.query(likesSql, rs -> {
+        jdbcTemplate.query(SQL_SELECT_LIKES_FOR_FILMS.formatted(genresSql), rs -> {
             long filmId = rs.getLong("film_id");
             likesByFilm
                     .computeIfAbsent(filmId, k -> new HashSet<>())
