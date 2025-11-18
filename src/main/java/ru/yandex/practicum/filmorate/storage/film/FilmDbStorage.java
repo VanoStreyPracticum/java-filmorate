@@ -101,6 +101,39 @@ public class FilmDbStorage implements FilmStorage {
             WHERE film_id = ?
             """;
 
+    private static final String SQL_EXISTS_RATING = """
+            SELECT COUNT(*) FROM mpa WHERE id = ?
+            """;
+
+    private static final String SQL_EXISTS_GENRE = """
+            SELECT COUNT(*) FROM genres WHERE id = ?
+            """;
+
+    private static final String SQL_SELECT_USERS_WITH_SIMILAR_TASTES = """
+            SELECT ul2.user_id
+            FROM (SELECT *
+                  FROM LIKES
+                  WHERE USER_ID = ?) AS ul1
+                     JOIN LIKES AS ul2 ON ul1.FILM_ID = ul2.FILM_ID
+                AND ul1.user_id != ul2.user_id
+            GROUP BY ul2.user_id, ul2.user_id
+            ORDER BY COUNT(*) DESC;
+            """;
+
+    private static final String SQL_SELECT_RECOMMENDED_FILMS = """
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM FILMS AS f
+                     JOIN MPA AS m ON m.id = f.mpa_id
+            WHERE f.id IN (SELECT ul1.FILM_ID
+                         FROM (SELECT *
+                               FROM LIKES
+                               WHERE USER_ID = ?) AS ul1
+                                  LEFT JOIN (SELECT *
+                                             FROM LIKES
+                                             WHERE USER_ID = ?) ul2 ON ul1.FILM_ID = ul2.FILM_ID
+                         WHERE ul2.USER_ID IS NULL);
+            """;
     // --- SQL для режиссёров ---
     private static final String SQL_INSERT_FILM_DIRECTOR = """
             MERGE INTO film_directors (film_id, director_id)
@@ -366,6 +399,32 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     // --- Вспомогательные методы ---
+    @Override
+    public Collection<Film> getRecommendedFilms(int userId) {
+        List<Integer> usersWithSimilarTastes = jdbcTemplate.queryForList(SQL_SELECT_USERS_WITH_SIMILAR_TASTES,
+                Integer.class, userId);
+
+        List<Film> recomenndedFilms = new ArrayList<>();
+
+        for (Integer id : usersWithSimilarTastes) {
+            recomenndedFilms = jdbcTemplate.query(con -> {
+                var ps = con.prepareStatement(SQL_SELECT_RECOMMENDED_FILMS);
+                ps.setInt(1, id);
+                ps.setInt(2, userId);
+                return ps;
+            }, new FilmRowMapper());
+
+            if (!recomenndedFilms.isEmpty()) {
+                break;
+            }
+        }
+
+        recomenndedFilms.stream()
+                .peek(this::loadRelations);
+
+        return recomenndedFilms;
+    }
+
     private void saveFilmGenres(Film film) {
         if (film.getGenres() == null || film.getGenres().isEmpty()) return;
 
@@ -434,4 +493,5 @@ public class FilmDbStorage implements FilmStorage {
             throw new NotFoundException("Фильм с id=" + filmId + " не найден");
         }
     }
+
 }
