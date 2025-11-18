@@ -14,7 +14,6 @@ import ru.yandex.practicum.filmorate.util.OperationType;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -79,10 +78,14 @@ public class FilmService {
         eventService.createEvent(userId, EventType.LIKE.name(), OperationType.REMOVE.name(), filmId);
     }
 
-    public List<Film> getPopular(int count) {
-        return filmStorage.getPopularFilms(count)
-                .stream()
-                .collect(Collectors.toList());
+    public Collection<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
+        int limit = (count == null || count <= 0) ? 10 : count;
+
+        if (genreId == null && year == null) {
+            return filmStorage.getPopularFilms(limit);
+        }
+
+        return filmStorage.getPopularFilms(limit, genreId, year);
     }
 
     public Collection<Film> getRecommendations(int userId) {
@@ -91,9 +94,9 @@ public class FilmService {
 
     public Collection<Film> getFilmsByDirector(int directorId, String sortBy) {
         if (sortBy.equals("year")) {
-            return filmStorage.getFilmsByDirectorSortedByYear(directorId);
+            return (List<Film>) filmStorage.getFilmsByDirectorSortedByYear(directorId);
         } else if (sortBy.equals("likes")) {
-            return filmStorage.getFilmsByDirectorSortedByLikes(directorId);
+            return (List<Film>) filmStorage.getFilmsByDirectorSortedByLikes(directorId);
         } else {
             throw new IllegalArgumentException("sortBy должен быть 'year' или 'likes'");
         }

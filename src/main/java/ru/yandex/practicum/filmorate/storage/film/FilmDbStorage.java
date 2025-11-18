@@ -18,6 +18,7 @@ import java.sql.Date;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
 @Repository
 @Qualifier("filmDbStorage")
 @RequiredArgsConstructor
@@ -194,6 +195,28 @@ public class FilmDbStorage implements FilmStorage {
             DELETE FROM films WHERE id = ?
             """;
 
+    private static final String SQL_SELECT_POPULAR_FILTER = """
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name,
+                   COUNT(l.user_id) AS likes_count
+            FROM films f
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            """;
+
+    private static final String SQL_SELECT_GENRES_FOR_FILMS = """
+            SELECT fg.film_id, g.id, g.name
+            FROM film_genres fg
+            JOIN genres g ON fg.genre_id = g.id
+            WHERE fg.film_id IN (%s)
+            """;
+
+    private static final String SQL_SELECT_LIKES_FOR_FILMS = """
+            SELECT film_id, user_id
+            FROM likes
+            WHERE film_id IN (%s)
+            """;
+
     // --- Методы реализации интерфейса ---
     @Override
     public Film addFilm(Film film) {
@@ -285,6 +308,64 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
+    public Collection<Film> getPopularFilms(int count, Integer genreId, Integer year) {
+        StringBuilder sql = new StringBuilder(SQL_SELECT_POPULAR_FILTER);
+
+        List<Object> params = new ArrayList<>();
+
+        if (genreId != null) {
+            sql.append(" JOIN film_genres fg ON f.id = fg.film_id AND fg.genre_id = ?");
+            params.add(genreId);
+        }
+
+        sql.append(" WHERE 1=1 ");
+
+        if (year != null) {
+            sql.append(" AND EXTRACT(YEAR FROM f.release_date) = ?");
+            params.add(year);
+        }
+
+        sql.append("""
+                    GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+                    ORDER BY likes_count DESC
+                    LIMIT ?
+                """);
+        params.add(count);
+
+        List<Film> films = jdbcTemplate.query(sql.toString(), filmRowMapper, params.toArray());
+
+        if (films.isEmpty()) {
+            return films;
+        }
+
+        List<Long> filmIds = films.stream().map(Film::getId).toList();
+        String placeholders = filmIds.stream().map(id -> "?").collect(Collectors.joining(","));
+
+        Map<Long, Set<Genre>> genresByFilm = new HashMap<>();
+        jdbcTemplate.query(SQL_SELECT_GENRES_FOR_FILMS.formatted(placeholders), rs -> {
+            long filmId = rs.getLong("film_id");
+            genresByFilm
+                    .computeIfAbsent(filmId, k -> new LinkedHashSet<>())
+                    .add(new Genre(rs.getInt("id"), rs.getString("name")));
+        }, filmIds.toArray());
+
+        Map<Long, Set<Long>> likesByFilm = new HashMap<>();
+        jdbcTemplate.query(SQL_SELECT_LIKES_FOR_FILMS.formatted(placeholders), rs -> {
+            long filmId = rs.getLong("film_id");
+            likesByFilm
+                    .computeIfAbsent(filmId, k -> new HashSet<>())
+                    .add(rs.getLong("user_id"));
+        }, filmIds.toArray());
+
+        for (Film film : films) {
+            film.setGenres(genresByFilm.getOrDefault(film.getId(), new LinkedHashSet<>()));
+            film.setLikes(likesByFilm.getOrDefault(film.getId(), new HashSet<>()));
+        }
+
+        return films;
+    }
+
+    @Override
     public Collection<Film> getFilmsByDirectorSortedByYear(int directorId) {
         List<Film> films = jdbcTemplate.query(SQL_SELECT_FILMS_BY_DIRECTOR_SORT_YEAR, filmRowMapper, directorId);
         films.forEach(this::loadRelations);
@@ -312,6 +393,7 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    // --- Вспомогательные методы ---
     @Override
     public Collection<Film> getRecommendedFilms(int userId) {
         List<Integer> usersWithSimilarTastes = jdbcTemplate.queryForList(SQL_SELECT_USERS_WITH_SIMILAR_TASTES,
@@ -406,5 +488,4 @@ public class FilmDbStorage implements FilmStorage {
             throw new NotFoundException("Фильм с id=" + filmId + " не найден");
         }
     }
-
 }
