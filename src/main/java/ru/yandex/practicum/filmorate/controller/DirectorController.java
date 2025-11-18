@@ -1,7 +1,9 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.service.DirectorService;
 
@@ -24,9 +26,13 @@ public class DirectorController {
     }
 
     @PostMapping
-    public Director create(@RequestBody Director director) {
+    public Director create(@RequestBody @Valid Director director) {
+        if (director.getName() == null || director.getName().isBlank()) {
+            throw new ValidationException("Director name is empty");
+        }
         return directorService.create(director);
     }
+
 
     @PutMapping
     public Director update(@RequestBody Director director) {
