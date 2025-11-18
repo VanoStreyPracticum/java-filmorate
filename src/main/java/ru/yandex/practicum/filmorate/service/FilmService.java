@@ -88,7 +88,11 @@ public class FilmService {
         return filmStorage.getPopularFilms(limit, genreId, year);
     }
 
-    public List<Film> getFilmsByDirector(int directorId, String sortBy) {
+    public Collection<Film> getRecommendations(int userId) {
+        return filmStorage.getRecommendedFilms(userId);
+    }
+
+    public Collection<Film> getFilmsByDirector(int directorId, String sortBy) {
         if (sortBy.equals("year")) {
             return (List<Film>) filmStorage.getFilmsByDirectorSortedByYear(directorId);
         } else if (sortBy.equals("likes")) {
