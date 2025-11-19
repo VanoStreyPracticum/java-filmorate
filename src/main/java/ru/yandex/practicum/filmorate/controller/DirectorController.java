@@ -27,9 +27,6 @@ public class DirectorController {
 
     @PostMapping
     public Director create(@RequestBody @Valid Director director) {
-        if (director.getName() == null || director.getName().isBlank()) {
-            throw new ValidationException("Director name is empty");
-        }
         return directorService.create(director);
     }
 
