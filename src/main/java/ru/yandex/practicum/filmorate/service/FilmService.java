@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import ru.yandex.practicum.filmorate.util.EventType;
 import ru.yandex.practicum.filmorate.util.OperationType;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -110,5 +111,20 @@ public class FilmService {
             throw new NotFoundException("Пользователь не найден: " + friendId);
         }
         return filmStorage.getCommonFilms(userId, friendId);
+    }
+
+    public Collection<Film> searchFilms(String query, String by) {
+        if (query == null || query.isBlank()) {
+            throw new ValidationException("Параметр query не должен быть пустым");
+        }
+
+        Collection<String> fields = Arrays.stream(by.split(","))
+                .map(String::trim).toList();
+
+        if (fields.isEmpty()) {
+            throw new ValidationException("Не указано поле поиска (by=title,director)");
+        }
+
+        return filmStorage.searchFilms(query.toLowerCase(), fields);
     }
 }

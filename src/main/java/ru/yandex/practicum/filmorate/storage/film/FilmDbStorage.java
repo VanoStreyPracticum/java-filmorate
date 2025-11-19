@@ -217,6 +217,17 @@ public class FilmDbStorage implements FilmStorage {
             WHERE film_id IN (%s)
             """;
 
+    private static final String SQL_SEARCH_BASE = """
+        SELECT f.id, f.name, f.description, f.release_date, f.duration,
+               f.mpa_id, m.name AS mpa_name
+        FROM films f
+        LEFT JOIN mpa m ON f.mpa_id = m.id
+        LEFT JOIN film_directors fd ON f.id = fd.film_id
+        LEFT JOIN directors d ON fd.director_id = d.id
+        LEFT JOIN likes l ON f.id = l.film_id
+        WHERE
+        """;
+
     // --- Методы реализации интерфейса ---
     @Override
     public Film addFilm(Film film) {
@@ -385,6 +396,41 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    @Override
+    public Collection<Film> searchFilms(String query, Collection<String> searchBy) {
+
+        StringBuilder sql = new StringBuilder(SQL_SEARCH_BASE);
+        List<Object> params = new ArrayList<>();
+
+        List<String> conditions = new ArrayList<>();
+
+        if (searchBy.contains("title")) {
+            conditions.add("LOWER(f.name) LIKE ?");
+            params.add("%" + query + "%");
+        }
+
+        if (searchBy.contains("director")) {
+            conditions.add("LOWER(d.name) LIKE ?");
+            params.add("%" + query + "%");
+        }
+
+        if (conditions.isEmpty()) {
+            throw new IllegalArgumentException("searchBy должен содержать title, director или оба");
+        }
+
+        sql.append(String.join(" OR ", conditions));
+
+        sql.append("""
+            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+            ORDER BY COUNT(l.user_id) DESC
+            """);
+
+        List<Film> films = jdbcTemplate.query(sql.toString(), filmRowMapper, params.toArray());
+        films.forEach(this::loadRelations);
+        return films;
+    }
+
+
     // --- Вспомогательные методы ---
     @Override
     public Collection<Film> getFilmsByDirectorSortedByLikes(int directorId) {
@@ -393,7 +439,6 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
-    // --- Вспомогательные методы ---
     @Override
     public Collection<Film> getRecommendedFilms(int userId) {
         List<Integer> usersWithSimilarTastes = jdbcTemplate.queryForList(SQL_SELECT_USERS_WITH_SIMILAR_TASTES,

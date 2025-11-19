@@ -33,4 +33,6 @@ public interface FilmStorage {
     Collection<Film> getFilmsByDirectorSortedByLikes(int directorId);
 
     Collection<Film> getCommonFilms(long userId, long friendId);
+
+    Collection<Film> searchFilms(String query, Collection<String> searchBy);
 }
