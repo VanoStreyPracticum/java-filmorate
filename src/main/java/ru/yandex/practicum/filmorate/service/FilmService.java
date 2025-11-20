@@ -94,13 +94,21 @@ public class FilmService {
     }
 
     public Collection<Film> getFilmsByDirector(int directorId, String sortBy) {
+        Collection<Film> result;
         if (sortBy.equals("year")) {
-            return (List<Film>) filmStorage.getFilmsByDirectorSortedByYear(directorId);
+            result = filmStorage.getFilmsByDirectorSortedByYear(directorId);
+            if (result.isEmpty()){
+                throw new NotFoundException("Не найдено фильмов режисера с id: " + directorId);
+            }
         } else if (sortBy.equals("likes")) {
-            return (List<Film>) filmStorage.getFilmsByDirectorSortedByLikes(directorId);
+            result = filmStorage.getFilmsByDirectorSortedByLikes(directorId);
+            if (result.isEmpty()){
+                throw new NotFoundException("Не найдено фильмов режисера с id: " + directorId);
+            }
         } else {
             throw new IllegalArgumentException("sortBy должен быть 'year' или 'likes'");
         }
+        return result;
     }
 
     public Collection<Film> getCommonFilms(long userId, long friendId) {

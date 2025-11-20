@@ -99,8 +99,8 @@ public class UserController {
     }
 
     @GetMapping("/{id}/recommendations")
-    public Collection<Film> getRecommendations(@PathVariable int id) {
-        return filmService.getRecommendations(id);
+    public ResponseEntity<Collection<Film>> getRecommendations(@PathVariable int id) {
+        return ResponseEntity.ok(filmService.getRecommendations(id));
     }
 
     @GetMapping("/{id}/feed")

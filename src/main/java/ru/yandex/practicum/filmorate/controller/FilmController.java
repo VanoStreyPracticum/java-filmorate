@@ -32,13 +32,13 @@ public class FilmController {
     }
 
     @GetMapping
-    public Collection<Film> getAllFilms() {
-        return filmService.getAll();
+    public ResponseEntity<Collection<Film>> getAllFilms() {
+        return ResponseEntity.ok(filmService.getAll());
     }
 
     @GetMapping("/{id}")
-    public Film getFilmById(@PathVariable long id) {
-        return filmService.getById(id);
+    public ResponseEntity<Film> getFilmById(@PathVariable long id) {
+        return ResponseEntity.ok(filmService.getById(id));
     }
 
     @DeleteMapping("/{id}")
@@ -59,20 +59,27 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public Collection<Film> getPopularFilms(@RequestParam(defaultValue = "10") Integer count,
+    public ResponseEntity<Collection<Film>> getPopularFilms(@RequestParam(defaultValue = "10") Integer count,
                                             @RequestParam(required = false) Integer genreId,
                                             @RequestParam(required = false) Integer year) {
-        return filmService.getPopularFilms(count, genreId, year);
+        return ResponseEntity.ok(filmService.getPopularFilms(count, genreId, year));
+    }
+
+    @GetMapping("/common")
+    public ResponseEntity<Collection<Film>> getCommonFilms(@RequestParam(defaultValue = "10") Integer count,
+                                            @RequestParam(required = false) Long userId,
+                                            @RequestParam(required = false) Long friendId) {
+        return ResponseEntity.ok(filmService.getCommonFilms(userId, friendId));
     }
 
     @GetMapping("/director/{directorId}")
-    public Collection<Film> getFilmsByDirector(@PathVariable int directorId, @RequestParam String sortBy) {
-        return filmService.getFilmsByDirector(directorId, sortBy);
+    public ResponseEntity<Collection<Film>> getFilmsByDirector(@PathVariable int directorId, @RequestParam String sortBy) {
+        return ResponseEntity.ok(filmService.getFilmsByDirector(directorId, sortBy));
     }
 
     @GetMapping("/search")
-    public Collection<Film> searchFilms(@RequestParam String query,
+    public ResponseEntity<Collection<Film>> searchFilms(@RequestParam String query,
                                         @RequestParam String by) {
-        return filmService.searchFilms(query, by);
+        return ResponseEntity.ok(filmService.searchFilms(query, by));
     }
 }

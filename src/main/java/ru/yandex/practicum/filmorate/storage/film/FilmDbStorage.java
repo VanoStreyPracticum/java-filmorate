@@ -94,6 +94,9 @@ public class FilmDbStorage implements FilmStorage {
             ORDER BY g.id
             """;
 
+    public static final String SQL_DELETE_FILM_GENRES =
+            "DELETE FROM film_genres WHERE film_id = ?";
+
     private static final String SQL_SELECT_LIKES_BY_FILM_ID = """
             SELECT user_id
             FROM likes
@@ -133,12 +136,16 @@ public class FilmDbStorage implements FilmStorage {
                                              WHERE USER_ID = ?) ul2 ON ul1.FILM_ID = ul2.FILM_ID
                          WHERE ul2.USER_ID IS NULL);
             """;
+
     // --- SQL для режиссёров ---
     private static final String SQL_INSERT_FILM_DIRECTOR = """
             MERGE INTO film_directors (film_id, director_id)
             KEY (film_id, director_id)
             VALUES (?, ?)
             """;
+
+    public static final String SQL_DELETE_FILM_DIRECTORS =
+            "DELETE FROM film_directors WHERE film_id = ?";
 
     private static final String SQL_SELECT_DIRECTORS_BY_FILM_ID = """
             SELECT d.id, d.name
@@ -204,18 +211,18 @@ public class FilmDbStorage implements FilmStorage {
             LEFT JOIN likes l ON f.id = l.film_id
             """;
 
-    private static final String SQL_SELECT_GENRES_FOR_FILMS = """
-            SELECT fg.film_id, g.id, g.name
-            FROM film_genres fg
-            JOIN genres g ON fg.genre_id = g.id
-            WHERE fg.film_id IN (%s)
-            """;
+    private static final String SQL_JOIN_GENRE =
+            "JOIN film_genres fg ON f.id = fg.film_id AND fg.genre_id = ?";
 
-    private static final String SQL_SELECT_LIKES_FOR_FILMS = """
-            SELECT film_id, user_id
-            FROM likes
-            WHERE film_id IN (%s)
-            """;
+    private static final String SQL_WHERE_CLAUSE = "WHERE 1=1 ";
+
+    private static final String SQL_FILTER_BY_YEAR =
+            "AND EXTRACT(YEAR FROM f.release_date) = ?";
+
+    private static final String SQL_GROUP_ORDER_LIMIT =
+            "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name " +
+                    "ORDER BY likes_count DESC " +
+                    "LIMIT ?";
 
     private static final String SQL_SEARCH_BASE = """
         SELECT f.id, f.name, f.description, f.release_date, f.duration,
@@ -290,8 +297,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public boolean existsFilm(long id) {
-        Boolean exists = jdbcTemplate.queryForObject(SQL_EXISTS_FILM, Boolean.class, id);
-        return Boolean.TRUE.equals(exists);
+        return jdbcTemplate.queryForObject(SQL_EXISTS_FILM, Boolean.class, id);
     }
 
     @Override
@@ -321,57 +327,26 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Collection<Film> getPopularFilms(int count, Integer genreId, Integer year) {
         StringBuilder sql = new StringBuilder(SQL_SELECT_POPULAR_FILTER);
-
         List<Object> params = new ArrayList<>();
 
         if (genreId != null) {
-            sql.append(" JOIN film_genres fg ON f.id = fg.film_id AND fg.genre_id = ?");
+            sql.append(SQL_JOIN_GENRE);
             params.add(genreId);
         }
 
-        sql.append(" WHERE 1=1 ");
+        sql.append(SQL_WHERE_CLAUSE);
 
         if (year != null) {
-            sql.append(" AND EXTRACT(YEAR FROM f.release_date) = ?");
+            sql.append(SQL_FILTER_BY_YEAR);
             params.add(year);
         }
 
-        sql.append("""
-                    GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
-                    ORDER BY likes_count DESC
-                    LIMIT ?
-                """);
+        sql.append(SQL_GROUP_ORDER_LIMIT);
         params.add(count);
 
         List<Film> films = jdbcTemplate.query(sql.toString(), filmRowMapper, params.toArray());
 
-        if (films.isEmpty()) {
-            return films;
-        }
-
-        List<Long> filmIds = films.stream().map(Film::getId).toList();
-        String placeholders = filmIds.stream().map(id -> "?").collect(Collectors.joining(","));
-
-        Map<Long, Set<Genre>> genresByFilm = new HashMap<>();
-        jdbcTemplate.query(SQL_SELECT_GENRES_FOR_FILMS.formatted(placeholders), rs -> {
-            long filmId = rs.getLong("film_id");
-            genresByFilm
-                    .computeIfAbsent(filmId, k -> new LinkedHashSet<>())
-                    .add(new Genre(rs.getInt("id"), rs.getString("name")));
-        }, filmIds.toArray());
-
-        Map<Long, Set<Long>> likesByFilm = new HashMap<>();
-        jdbcTemplate.query(SQL_SELECT_LIKES_FOR_FILMS.formatted(placeholders), rs -> {
-            long filmId = rs.getLong("film_id");
-            likesByFilm
-                    .computeIfAbsent(filmId, k -> new HashSet<>())
-                    .add(rs.getLong("user_id"));
-        }, filmIds.toArray());
-
-        for (Film film : films) {
-            film.setGenres(genresByFilm.getOrDefault(film.getId(), new LinkedHashSet<>()));
-            film.setLikes(likesByFilm.getOrDefault(film.getId(), new HashSet<>()));
-        }
+        if (!films.isEmpty()) films.forEach(this::loadRelations);
 
         return films;
     }
@@ -444,29 +419,29 @@ public class FilmDbStorage implements FilmStorage {
         List<Integer> usersWithSimilarTastes = jdbcTemplate.queryForList(SQL_SELECT_USERS_WITH_SIMILAR_TASTES,
                 Integer.class, userId);
 
-        List<Film> recomenndedFilms = new ArrayList<>();
+        List<Film> recommendedFilms = new ArrayList<>();
 
         for (Integer id : usersWithSimilarTastes) {
-            recomenndedFilms = jdbcTemplate.query(con -> {
+            recommendedFilms = jdbcTemplate.query(con -> {
                 var ps = con.prepareStatement(SQL_SELECT_RECOMMENDED_FILMS);
                 ps.setInt(1, id);
                 ps.setInt(2, userId);
                 return ps;
             }, new FilmRowMapper());
 
-            if (!recomenndedFilms.isEmpty()) {
+            if (!recommendedFilms.isEmpty()) {
                 break;
             }
         }
 
-        recomenndedFilms.stream()
-                .peek(this::loadRelations);
+        recommendedFilms.stream().peek(this::loadRelations);
 
-        return recomenndedFilms;
+        return recommendedFilms;
     }
 
     private void saveFilmGenres(Film film) {
-        if (film.getGenres() == null || film.getGenres().isEmpty()) return;
+        if (film.getGenres() == null) return;
+        jdbcTemplate.update(SQL_DELETE_FILM_GENRES, film.getId());
 
         List<Genre> uniqueGenres = film.getGenres().stream()
                 .filter(Objects::nonNull)
@@ -488,9 +463,8 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void saveFilmDirectors(Film film) {
-        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
-            return;
-        }
+        if (film.getDirectors() == null) return;
+        jdbcTemplate.update(SQL_DELETE_FILM_DIRECTORS, film.getId());
 
         List<Director> directors = new ArrayList<>(film.getDirectors());
         jdbcTemplate.batchUpdate(SQL_INSERT_FILM_DIRECTOR, new BatchPreparedStatementSetter() {
@@ -520,12 +494,12 @@ public class FilmDbStorage implements FilmStorage {
             return true;
         }
         Integer count = jdbcTemplate.queryForObject(SQL_EXISTS_RATING, Integer.class, ratingId);
-        return count != null && count > 0;
+        return count > 0;
     }
 
     private boolean genreExists(Integer genreId) {
         Integer count = jdbcTemplate.queryForObject(SQL_EXISTS_GENRE, Integer.class, genreId);
-        return count != null && count > 0;
+        return count > 0;
     }
 
     private void requireFilmExists(Long filmId) {
