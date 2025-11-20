@@ -22,12 +22,6 @@ public class ReviewMapper {
         if (updateReview.hasIsPositive()) {
             review.setIsPositive(updateReview.getIsPositive());
         }
-        if (updateReview.hasUserId()) {
-            review.setUserId(updateReview.getUserId());
-        }
-        if (updateReview.hasFilmId()) {
-            review.setFilmId(updateReview.getFilmId());
-        }
         return review;
     }
 

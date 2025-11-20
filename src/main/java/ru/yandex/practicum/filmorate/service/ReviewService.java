@@ -49,7 +49,7 @@ public class ReviewService {
         log.info("Отзыв после маппинга новых полей {}", mappedReview);
         Review updatedReview = reviewStorage.update(mappedReview);
         log.info("Обновленный отзыв в базе данных {}", updatedReview);
-        eventService.createEvent(updateRequest.getUserId(), EventType.REVIEW.name(),
+        eventService.createEvent(reviewFromDb.getUserId(), EventType.REVIEW.name(),
                 OperationType.UPDATE.name(), updatedReview.getReviewId());
         return ReviewMapper.mapToReviewDto(updatedReview);
     }

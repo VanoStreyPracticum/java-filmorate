@@ -225,15 +225,15 @@ public class FilmDbStorage implements FilmStorage {
                     "LIMIT ?";
 
     private static final String SQL_SEARCH_BASE = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_id, m.name AS mpa_name
-        FROM films f
-        LEFT JOIN mpa m ON f.mpa_id = m.id
-        LEFT JOIN film_directors fd ON f.id = fd.film_id
-        LEFT JOIN directors d ON fd.director_id = d.id
-        LEFT JOIN likes l ON f.id = l.film_id
-        WHERE
-        """;
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   f.mpa_id, m.name AS mpa_name
+            FROM films f
+            LEFT JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN film_directors fd ON f.id = fd.film_id
+            LEFT JOIN directors d ON fd.director_id = d.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            WHERE
+            """;
 
     // --- Методы реализации интерфейса ---
     @Override
@@ -396,9 +396,9 @@ public class FilmDbStorage implements FilmStorage {
         sql.append(String.join(" OR ", conditions));
 
         sql.append("""
-            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
-            ORDER BY COUNT(l.user_id) DESC
-            """);
+                GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+                ORDER BY COUNT(l.user_id) DESC
+                """);
 
         List<Film> films = jdbcTemplate.query(sql.toString(), filmRowMapper, params.toArray());
         films.forEach(this::loadRelations);
@@ -434,7 +434,7 @@ public class FilmDbStorage implements FilmStorage {
             }
         }
 
-        recommendedFilms.stream().peek(this::loadRelations);
+        recommendedFilms.stream().forEach(this::loadRelations);
 
         return recommendedFilms;
     }

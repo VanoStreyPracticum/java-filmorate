@@ -60,6 +60,13 @@ public class EventDbStorage implements EventStorage {
     @Override
     public List<Event> getEventsByUserId(Long userId) {
         log.info("Попытка получения листа событий по user_id {}", userId);
-        return jdbc.query(SELECT_EVENT_QUERY, rowMapper, userId);
+        List<Event> eventList = jdbc.query(SELECT_EVENT_QUERY, rowMapper, userId);
+        log.info("Лист событий полученный из БД {}", eventList);
+        if (!eventList.isEmpty()) {
+            return eventList;
+        } else {
+            log.error("Событий не найдено по пользователю с ID {}", userId);
+            throw new NotFoundException("Событий не найдено по пользователю");
+        }
     }
 }
