@@ -14,7 +14,6 @@ import ru.yandex.practicum.filmorate.util.OperationType;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -97,12 +96,12 @@ public class FilmService {
         Collection<Film> result;
         if (sortBy.equals("year")) {
             result = filmStorage.getFilmsByDirectorSortedByYear(directorId);
-            if (result.isEmpty()){
+            if (result.isEmpty()) {
                 throw new NotFoundException("Не найдено фильмов режисера с id: " + directorId);
             }
         } else if (sortBy.equals("likes")) {
             result = filmStorage.getFilmsByDirectorSortedByLikes(directorId);
-            if (result.isEmpty()){
+            if (result.isEmpty()) {
                 throw new NotFoundException("Не найдено фильмов режисера с id: " + directorId);
             }
         } else {
