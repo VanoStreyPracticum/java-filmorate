@@ -11,7 +11,7 @@ public interface DirectorStorage {
 
     Optional<Director> getById(int id);
 
-    boolean existsById(int id);
+    boolean existsById(long id);
 
     List<Director> getAll();
 

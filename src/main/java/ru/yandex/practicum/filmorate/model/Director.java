@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class Director {
-    private int id;
+    private Long id;
     private String name;
 }
