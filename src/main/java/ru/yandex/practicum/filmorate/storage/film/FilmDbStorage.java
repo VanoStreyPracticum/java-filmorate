@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -232,24 +231,17 @@ public class FilmDbStorage implements FilmStorage {
     private static final String SQL_SELECT_RELATIONS_BATCH = """
         SELECT
             f.id AS film_id,
-    
             g.id AS genre_id,
             g.name AS genre_name,
-    
             l.user_id AS like_user_id,
-    
             d.id AS director_id,
             d.name AS director_name
-    
         FROM films f
         LEFT JOIN film_genres fg ON f.id = fg.film_id
         LEFT JOIN genres g ON fg.genre_id = g.id
-    
         LEFT JOIN likes l ON f.id = l.film_id
-    
         LEFT JOIN film_directors fd ON f.id = fd.film_id
         LEFT JOIN directors d ON fd.director_id = d.id
-    
         WHERE f.id IN (%s)
         ORDER BY f.id
     """;
