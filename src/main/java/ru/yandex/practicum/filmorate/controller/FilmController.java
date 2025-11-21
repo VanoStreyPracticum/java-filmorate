@@ -20,14 +20,12 @@ public class FilmController {
     @PostMapping
     public ResponseEntity<Film> createFilm(@Valid @RequestBody Film film) {
         Film created = filmService.create(film);
-        log.info("Добавлен фильм: id={}, name='{}'", created.getId(), created.getName());
         return ResponseEntity.ok(created);
     }
 
     @PutMapping
     public ResponseEntity<Film> updateFilm(@Valid @RequestBody Film film) {
         Film updated = filmService.update(film);
-        log.info("Обновлён фильм: id={}, name='{}'", updated.getId(), updated.getName());
         return ResponseEntity.ok(updated);
     }
 
@@ -44,7 +42,6 @@ public class FilmController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFilm(@PathVariable long id) {
         filmService.delete(id);
-        log.info("Удалён фильм: id={}", id);
         return ResponseEntity.noContent().build();
     }
 

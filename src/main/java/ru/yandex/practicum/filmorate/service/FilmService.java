@@ -29,6 +29,7 @@ public class FilmService {
 
     public Film create(Film film) {
         validationService.validateNewFilm(film);
+        log.info("Добавлен фильм: id={}, name='{}'", film.getId(), film.getName());
         return filmStorage.addFilm(film);
     }
 
@@ -37,6 +38,7 @@ public class FilmService {
             throw new ValidationException("ID обязателен для обновления фильма");
         }
         validationService.validateNewFilm(film);
+        log.info("Обновлён фильм: id={}, name='{}'", film.getId(), film.getName());
         return filmStorage.updateFilm(film);
     }
 
@@ -44,6 +46,7 @@ public class FilmService {
         if (!filmStorage.existsFilm(id)) {
             throw new NotFoundException("Фильм не найден: " + id);
         }
+        log.info("Удалён фильм: id={}", id);
         filmStorage.deleteFilm(id);
     }
 

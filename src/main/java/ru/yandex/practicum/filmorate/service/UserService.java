@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
@@ -14,20 +16,16 @@ import java.util.Collection;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class UserService {
-
     @Qualifier("userDbStorage")
     private final UserStorage userStorage;
     private final ValidationService validationService;
     private final EventService eventService;
 
-    public UserService(UserStorage userStorage, ValidationService validationService, EventService eventService) {
-        this.userStorage = userStorage;
-        this.validationService = validationService;
-        this.eventService = eventService;
-    }
-
     public User create(User user) {
+        log.info("Создание пользователя с логином: {}", user.getLogin());
         validationService.validateNewUser(user);
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
@@ -36,6 +34,7 @@ public class UserService {
     }
 
     public User update(User user) {
+        log.info("Обновление пользователя с ID: {}", user.getId());
         if (user.getId() == null) {
             throw new ValidationException("ID обязателен для обновления пользователя");
         }
@@ -47,23 +46,23 @@ public class UserService {
     }
 
     public Collection<User> getAll() {
+        log.info("Получение всех пользователей");
         return userStorage.getAllUsers();
     }
 
     public User getById(long id) {
+        log.info("Получение пользователя с ID: {}", id);
         return userStorage.getUser(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден: " + id));
     }
 
-    public boolean existsUser(long id) {
-        return userStorage.existsUser(id);
-    }
-
     public boolean deleteUser(long id) {
+        log.info("Удаление пользователя с ID: {}", id);
         return userStorage.deleteUser(id);
     }
 
     public void addFriend(long userId, long friendId) {
+        log.info("Добавление друга: пользователь {} добавляет {}", userId, friendId);
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
@@ -75,6 +74,7 @@ public class UserService {
     }
 
     public void removeFriend(long userId, long friendId) {
+        log.info("Удаление друга: пользователь {} удаляет {}", userId, friendId);
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
@@ -86,6 +86,7 @@ public class UserService {
     }
 
     public List<User> getFriends(long userId) {
+        log.info("Получение друзей пользователя с ID: {}", userId);
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
@@ -93,6 +94,7 @@ public class UserService {
     }
 
     public List<User> getCommonFriends(long userId, long otherId) {
+        log.info("Получение общих друзей для пользователей {} и {}", userId, otherId);
         if (!userStorage.existsUser(userId)) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }
