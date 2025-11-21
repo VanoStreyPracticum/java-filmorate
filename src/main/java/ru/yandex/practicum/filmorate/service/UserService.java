@@ -63,44 +63,30 @@ public class UserService {
 
     public void addFriend(long userId, long friendId) {
         log.info("Добавление друга: пользователь {} добавляет {}", userId, friendId);
-        if (!userStorage.existsUser(userId)) {
-            throw new NotFoundException("Пользователь не найден: " + userId);
-        }
-        if (!userStorage.existsUser(friendId)) {
-            throw new NotFoundException("Пользователь не найден: " + friendId);
-        }
+        userStorage.requireUserExists(userId);
+        userStorage.requireUserExists(friendId);
         userStorage.addFriend(userId, friendId);
         eventService.createEvent(userId, EventType.FRIEND.name(), OperationType.ADD.name(), friendId);
     }
 
     public void removeFriend(long userId, long friendId) {
         log.info("Удаление друга: пользователь {} удаляет {}", userId, friendId);
-        if (!userStorage.existsUser(userId)) {
-            throw new NotFoundException("Пользователь не найден: " + userId);
-        }
-        if (!userStorage.existsUser(friendId)) {
-            throw new NotFoundException("Пользователь не найден: " + friendId);
-        }
+        userStorage.requireUserExists(userId);
+        userStorage.requireUserExists(friendId);
         userStorage.deleteFriend(userId, friendId);
         eventService.createEvent(userId, EventType.FRIEND.name(), OperationType.REMOVE.name(), friendId);
     }
 
     public List<User> getFriends(long userId) {
         log.info("Получение друзей пользователя с ID: {}", userId);
-        if (!userStorage.existsUser(userId)) {
-            throw new NotFoundException("Пользователь не найден: " + userId);
-        }
+        userStorage.requireUserExists(userId);
         return new ArrayList<>(userStorage.getFriendsList(userId));
     }
 
     public List<User> getCommonFriends(long userId, long otherId) {
         log.info("Получение общих друзей для пользователей {} и {}", userId, otherId);
-        if (!userStorage.existsUser(userId)) {
-            throw new NotFoundException("Пользователь не найден: " + userId);
-        }
-        if (!userStorage.existsUser(otherId)) {
-            throw new NotFoundException("Пользователь не найден: " + otherId);
-        }
+        userStorage.requireUserExists(userId);
+        userStorage.requireUserExists(otherId);
         return new ArrayList<>(userStorage.getCommonFriends(userId, otherId));
     }
 }

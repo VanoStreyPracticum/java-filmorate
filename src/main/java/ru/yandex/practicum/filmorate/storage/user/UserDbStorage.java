@@ -135,20 +135,20 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public boolean deleteUser(long userId) {
+    public boolean deleteUser(Long userId) {
         requireUserExists(userId);
         return jdbcTemplate.update(SQL_DELETE_USER, userId) > 0;
     }
 
     @Override
-    public Optional<User> getUser(long userId) {
+    public Optional<User> getUser(Long userId) {
         return jdbcTemplate.query(SQL_SELECT_USER_BY_ID, userRowMapper, userId)
                 .stream()
                 .findFirst();
     }
 
     @Override
-    public boolean existsUser(long userId) {
+    public boolean existsUser(Long userId) {
         return jdbcTemplate.queryForObject(SQL_EXISTS_USER, Boolean.class, userId);
     }
 
@@ -194,7 +194,7 @@ public class UserDbStorage implements UserStorage {
         return commonFriends;
     }
 
-    private void requireUserExists(Long userId) {
+    public void requireUserExists(Long userId) {
         if (!existsUser(userId)) {
             throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
