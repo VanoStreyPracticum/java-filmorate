@@ -11,7 +11,7 @@ public class UpdateDirector {
     private Long id;
     private String name;
 
-    public boolean hasName(){
+    public boolean hasName() {
         return name != null && !name.isEmpty() && !name.isBlank();
     }
 }
