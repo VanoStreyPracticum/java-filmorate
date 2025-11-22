@@ -57,7 +57,7 @@ public class DirectorDbStorage implements DirectorStorage {
     }
 
     @Override
-    public Optional<Director> getById(int id) {
+    public Optional<Director> getById(Long id) {
         List<Director> directors = jdbcTemplate.query(SQL_SELECT_DIRECTOR_BY_ID,
                 (rs, rowNum) -> new Director(rs.getLong("id"), rs.getString("name")), id);
         return directors.stream().findFirst();
@@ -70,12 +70,7 @@ public class DirectorDbStorage implements DirectorStorage {
     }
 
     @Override
-    public void delete(int id) {
+    public void delete(Long id) {
         jdbcTemplate.update(SQL_DELETE_DIRECTOR_BY_ID, id);
-    }
-
-    @Override
-    public boolean existsById(long id) {
-        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(SQL_EXISTS_DIRECTOR_BY_ID, Boolean.class, id));
     }
 }

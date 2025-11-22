@@ -2,8 +2,11 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.dto.director.DirectorDto;
+import ru.yandex.practicum.filmorate.dto.director.NewDirector;
+import ru.yandex.practicum.filmorate.dto.director.UpdateDirector;
 import ru.yandex.practicum.filmorate.service.DirectorService;
 
 import java.util.List;
@@ -15,28 +18,28 @@ public class DirectorController {
     private final DirectorService directorService;
 
     @GetMapping
-    public List<Director> getAll() {
-        return directorService.getAll();
+    public ResponseEntity<List<DirectorDto>> getAll() {
+        return ResponseEntity.ok(directorService.getAll());
     }
 
     @GetMapping("/{id}")
-    public Director getById(@PathVariable int id) {
-        return directorService.getById(id);
+    public ResponseEntity<DirectorDto> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(directorService.getById(id));
     }
 
     @PostMapping
-    public Director create(@RequestBody @Valid Director director) {
-        return directorService.create(director);
+    public ResponseEntity<DirectorDto> create(@RequestBody @Valid NewDirector newDirector) {
+        return ResponseEntity.ok(directorService.create(newDirector));
     }
 
 
     @PutMapping
-    public Director update(@RequestBody Director director) {
-        return directorService.update(director);
+    public ResponseEntity<DirectorDto> update(@RequestBody UpdateDirector updateDirector) {
+        return ResponseEntity.ok(directorService.update(updateDirector));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable int id) {
+    public void delete(@PathVariable Long id) {
         directorService.delete(id);
     }
 }
