@@ -31,9 +31,10 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         log.info("Удаление отзыва по ID {}", id);
         reviewService.delete(id);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")
@@ -50,26 +51,30 @@ public class ReviewController {
     }
 
     @PutMapping("{id}/like/{userId}")
-    public void createLike(@PathVariable Long id, @PathVariable Long userId) {
+    public ResponseEntity<Void> createLike(@PathVariable Long id, @PathVariable Long userId) {
         log.info("Создание лайка к отзыву по ID {} от пользователя по ID {}", id, userId);
         reviewService.createLike(id, userId, true);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("{id}/dislike/{userId}")
-    public void createDislike(@PathVariable Long id, @PathVariable Long userId) {
+    public ResponseEntity<Void> createDislike(@PathVariable Long id, @PathVariable Long userId) {
         log.info("Создание дизлайка к отзыву по ID {} от пользователя по ID {}", id, userId);
         reviewService.createLike(id, userId, false);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("{id}/like/{userId}")
-    public void removeLike(@PathVariable Long id, @PathVariable Long userId) {
+    public ResponseEntity<Void> removeLike(@PathVariable Long id, @PathVariable Long userId) {
         log.info("Удаление лайка к отзыву по ID {} от пользователя по ID {}", id, userId);
         reviewService.removeLike(id, userId);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("{id}/dislike/{userId}")
-    public void removeDislike(@PathVariable Long id, @PathVariable Long userId) {
+    public ResponseEntity<Void> removeDislike(@PathVariable Long id, @PathVariable Long userId) {
         log.info("Удаление дизлайка к отзыву по ID {} от пользователя по ID {}", id, userId);
         reviewService.removeLike(id, userId);
+        return ResponseEntity.ok().build();
     }
 }

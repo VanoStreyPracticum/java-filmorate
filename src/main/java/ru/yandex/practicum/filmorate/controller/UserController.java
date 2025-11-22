@@ -4,11 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.event.EventDto;
+import ru.yandex.practicum.filmorate.dto.film.FilmDTO;
 import ru.yandex.practicum.filmorate.dto.user.NewUserRequest;
 import ru.yandex.practicum.filmorate.dto.user.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.user.UserDTO;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.EventService;
@@ -99,7 +99,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/recommendations")
-    public ResponseEntity<Collection<Film>> getRecommendations(@PathVariable int id) {
+    public ResponseEntity<Collection<FilmDTO>> getRecommendations(@PathVariable int id) {
         return ResponseEntity.ok(filmService.getRecommendations(id));
     }
 

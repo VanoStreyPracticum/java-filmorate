@@ -11,8 +11,15 @@ import java.time.LocalDate;
 @Service
 public class ValidationService {
     private static final LocalDate FIRST_PUBLIC_SCREENING = LocalDate.of(1895, 12, 28);
+    private static final int MAX_DESCRIPTION_LENGTH = 200;
 
     public void validateNewFilm(Film film) {
+        if (film.getName() == null || film.getName().isBlank()) {
+            throw new ValidationException("Название не может быть пустым");
+        }
+        if (film.getDescription().length() > MAX_DESCRIPTION_LENGTH) {
+            throw new ValidationException("Максимальная длина описания — 200 символов");
+        }
         if (film.getReleaseDate().isBefore(FIRST_PUBLIC_SCREENING)) {
             throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895 года");
         }
