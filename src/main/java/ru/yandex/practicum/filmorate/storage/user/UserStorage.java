@@ -11,9 +11,13 @@ public interface UserStorage {
 
     User updateUser(User user);
 
-    Optional<User> getUser(long id);
+    boolean deleteUser(Long id);
 
-    boolean existsUser(long id);
+    Optional<User> getUser(Long id);
+
+    boolean existsUser(Long id);
+
+    void requireUserExists(Long id);
 
     Collection<User> getAllUsers();
 

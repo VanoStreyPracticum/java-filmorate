@@ -3,14 +3,20 @@ package ru.yandex.practicum.filmorate.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.event.EventDto;
+import ru.yandex.practicum.filmorate.dto.film.FilmDTO;
 import ru.yandex.practicum.filmorate.dto.user.NewUserRequest;
 import ru.yandex.practicum.filmorate.dto.user.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.user.UserDTO;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.service.EventService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -20,6 +26,8 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
+    private final FilmService filmService;
+    private final EventService eventService;
 
     @GetMapping
     public ResponseEntity<List<UserDTO>> getAll() {
@@ -50,6 +58,16 @@ public class UserController {
         return ResponseEntity.ok(userMapper.toDTO(updated));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable long id) {
+        boolean deleted = userService.deleteUser(id);
+        if (deleted) {
+            return ResponseEntity.ok(Map.of("message", "Пользователь удалён")); // ✅ JSON
+        } else {
+            return ResponseEntity.status(404).body(Map.of("error", "Пользователь не найден"));
+        }
+    }
+
     @PutMapping("/{id}/friends/{friendId}")
     public ResponseEntity<Void> addFriend(@PathVariable long id, @PathVariable long friendId) {
         userService.addFriend(id, friendId);
@@ -78,5 +96,16 @@ public class UserController {
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(common);
+    }
+
+    @GetMapping("/{id}/recommendations")
+    public ResponseEntity<Collection<FilmDTO>> getRecommendations(@PathVariable int id) {
+        return ResponseEntity.ok(filmService.getRecommendations(id));
+    }
+
+    @GetMapping("/{id}/feed")
+    public ResponseEntity<List<EventDto>> getFeedByUserId(@PathVariable long id) {
+        List<EventDto> feed = eventService.getUserFeed(id);
+        return ResponseEntity.ok(feed);
     }
 }

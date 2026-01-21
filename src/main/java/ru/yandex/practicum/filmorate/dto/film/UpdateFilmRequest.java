@@ -1,9 +1,13 @@
 package ru.yandex.practicum.filmorate.dto.film;
 
 import lombok.Data;
+import ru.yandex.practicum.filmorate.dto.director.UpdateDirector;
+import ru.yandex.practicum.filmorate.dto.genre.NewGenreRequest;
+import ru.yandex.practicum.filmorate.dto.mpa.NewMpaRequest;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 @Data
 public class UpdateFilmRequest {
@@ -12,30 +16,19 @@ public class UpdateFilmRequest {
     private String description;
     private LocalDate releaseDate;
     private Integer duration;
-    private Integer mpaId;
-    private List<Integer> genreIds;
-
-    public boolean hasName() {
-        return name != null && !name.isBlank();
-    }
-
-    public boolean hasDescription() {
-        return description != null;
-    }
-
-    public boolean hasReleaseDate() {
-        return releaseDate != null;
-    }
-
-    public boolean hasDuration() {
-        return duration != null;
-    }
+    private NewMpaRequest mpa;
+    private List<NewGenreRequest> genres;
+    private Set<UpdateDirector> directors;
 
     public boolean hasMpa() {
-        return mpaId != null;
+        return mpa != null;
     }
 
     public boolean hasGenres() {
-        return genreIds != null;
+        return genres != null;
+    }
+
+    public boolean hasDirectors() {
+        return directors != null;
     }
 }

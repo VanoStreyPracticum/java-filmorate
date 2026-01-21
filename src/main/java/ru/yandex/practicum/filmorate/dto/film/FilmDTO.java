@@ -10,6 +10,7 @@ import java.util.Set;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import ru.yandex.practicum.filmorate.model.Director;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,4 +30,5 @@ public class FilmDTO {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Set<Long> likes;
+    private Set<Director> directors;
 }

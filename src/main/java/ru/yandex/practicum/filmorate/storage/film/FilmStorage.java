@@ -10,6 +10,8 @@ public interface FilmStorage {
 
     Film updateFilm(Film film);
 
+    void deleteFilm(long id);
+
     Optional<Film> getFilm(long id);
 
     boolean existsFilm(long id);
@@ -21,4 +23,16 @@ public interface FilmStorage {
     void deleteLike(Long filmId, Long userId);
 
     Collection<Film> getPopularFilms(int count);
+
+    Collection<Film> getPopularFilms(int count, Integer genreId, Integer year);
+
+    Collection<Film> getRecommendedFilms(int userId);
+
+    Collection<Film> getFilmsByDirectorSortedByYear(int directorId);
+
+    Collection<Film> getFilmsByDirectorSortedByLikes(int directorId);
+
+    Collection<Film> getCommonFilms(long userId, long friendId);
+
+    Collection<Film> searchFilms(String query, Collection<String> searchBy);
 }
